@@ -1,4 +1,3 @@
-// A simple observable store for all FinHQ data
 export const store = {
   transactions: [],
   assets: [],
@@ -6,15 +5,28 @@ export const store = {
   budgets: [],
   goals: [],
   recurring: [],
-  subscribers: [],
   
+  subscribers: [],
+  isLoaded: false,
+  
+  // Modules subscribe to state changes here
   subscribe(callback) {
     this.subscribers.push(callback);
-    callback(this);
+    if (this.isLoaded) callback(this);
   },
   
+  // Firebase pushes new data here
   update(key, data) {
     this[key] = data;
+    this.notify();
+  },
+
+  setLoaded() {
+    this.isLoaded = true;
+    this.notify();
+  },
+
+  notify() {
     this.subscribers.forEach(sub => sub(this));
   }
 };
