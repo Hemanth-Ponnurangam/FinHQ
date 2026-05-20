@@ -5,16 +5,22 @@ export function initDashboard() {
   let liquidCash = 0;
   let currentMonthSpend = 0;
   let totalAssetValue = 0;
+  let totalDebtValue = 0;
 
   function updateUI() {
-    const totalNetWorth = liquidCash + totalAssetValue;
+    // THE ULTIMATE FORMULA
+    const totalNetWorth = (liquidCash + totalAssetValue) - totalDebtValue;
     
-    document.getElementById('netWorthDisplay').innerText = `₹${totalNetWorth.toLocaleString('en-IN')}`;
+    // Formatting to handle negatives correctly
+    const nwIsNeg = totalNetWorth < 0;
+    const nwFormatted = Math.abs(totalNetWorth).toLocaleString('en-IN');
+    
+    document.getElementById('netWorthDisplay').innerText = nwIsNeg ? `-₹${nwFormatted}` : `₹${nwFormatted}`;
     document.getElementById('liquidCashDisplay').innerText = `₹${liquidCash.toLocaleString('en-IN')}`;
     document.getElementById('monthSpendDisplay').innerText = `₹${currentMonthSpend.toLocaleString('en-IN')}`;
   }
 
-  // Listen to Transactions
+  // 1. Listen to Transactions
   onSnapshot(collection(db, "transactions"), (snapshot) => {
     liquidCash = 0; currentMonthSpend = 0;
     const now = new Date();
@@ -34,10 +40,17 @@ export function initDashboard() {
     updateUI();
   });
 
-  // Listen to Assets
+  // 2. Listen to Assets
   onSnapshot(collection(db, "assets"), (snapshot) => {
     totalAssetValue = 0;
     snapshot.forEach(doc => totalAssetValue += doc.data().currentValue);
+    updateUI();
+  });
+
+  // 3. Listen to Debts (NEW)
+  onSnapshot(collection(db, "debts"), (snapshot) => {
+    totalDebtValue = 0;
+    snapshot.forEach(doc => totalDebtValue += doc.data().principal);
     updateUI();
   });
 }
