@@ -5,17 +5,16 @@ export const store = {
   budgets: [],
   goals: [],
   recurring: [],
+  fuel: [], // NEW: Commute tracking array
   
   subscribers: [],
   isLoaded: false,
   
-  // Modules subscribe to state changes here
   subscribe(callback) {
     this.subscribers.push(callback);
     if (this.isLoaded) callback(this);
   },
   
-  // Firebase pushes new data here
   update(key, data) {
     this[key] = data;
     this.notify();
