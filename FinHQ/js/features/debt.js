@@ -5,8 +5,17 @@ export function initDebt(ui) {
   const form = document.getElementById('debtForm');
   const list = document.getElementById('debtList');
   const totalDisplay = document.getElementById('totalDebtDisplay');
+  
   let currentEditId = null;
   const dataMap = new Map();
+  let allDebts = []; // For Strategies
+
+  // Helper: Financial Math
+  function calculateEMI(principal, annualRate, months) {
+    if (annualRate === 0) return principal / months;
+    const r = (annualRate / 12) / 100;
+    return (principal * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1);
+  }
 
   document.addEventListener('resetDebtForm', () => {
     currentEditId = null; 
@@ -24,27 +33,18 @@ export function initDebt(ui) {
       
       const principal = Number(document.getElementById('debtPrincipal').value);
       const paid = Number(document.getElementById('debtPaid').value) || 0;
-      const emi = Number(document.getElementById('debtEMI').value) || 0;
+      const rate = Number(document.getElementById('debtRate').value) || 0;
+      const tenure = Number(document.getElementById('debtTenure').value) || 1;
 
-      // UX 13 FIX: Strict Logic Validation for Liabilities
-      if (principal <= 0) {
-        alert("Total Principal must be greater than 0.");
-        return;
-      }
-      if (paid < 0) {
-        alert("Amount Paid cannot be negative.");
-        return;
-      }
-      if (paid > principal) {
-        alert("Amount Paid cannot exceed the Total Principal.");
-        return;
-      }
+      if (principal <= 0 || tenure <= 0) return alert("Principal and Tenure must be > 0.");
+      if (paid < 0 || paid > principal) return alert("Invalid amount paid.");
+
+      const calculatedEmi = calculateEMI(principal, rate, tenure);
 
       const payload = {
-        principal: principal,
-        paid: paid,
+        principal, paid, rate, tenure,
+        emi: calculatedEmi,
         name: document.getElementById('debtName').value || 'Unnamed Loan',
-        emi: emi,
         date: new Date(document.getElementById('debtDate').value || new Date()).toISOString(),
         timestamp: new Date(document.getElementById('debtDate').value || new Date()).getTime()
       };
@@ -63,49 +63,111 @@ export function initDebt(ui) {
     });
 
     document.getElementById('deleteDebtBtn')?.addEventListener('click', () => {
-      ui.showConfirm("Delete Loan?", "This removes the loan. Are you sure?", async () => {
-        try {
-          await deleteDoc(doc(db, "debts", currentEditId));
-        } catch (err) {
-          console.error(err);
-        } finally {
-          ui.closeAll(); // Bug 3 FIX: Modals will now gracefully dismiss after deletion!
-        }
+      ui.showConfirm("Delete Loan?", "This removes the loan permanently.", async () => {
+        try { await deleteDoc(doc(db, "debts", currentEditId)); } 
+        catch (err) { console.error(err); } 
+        finally { ui.closeAll(); }
       });
     });
+  }
+
+  // Render Strategy Sheet
+  document.getElementById('openStrategyBtn')?.addEventListener('click', () => {
+    const avalancheDiv = document.getElementById('avalancheList');
+    const snowballDiv = document.getElementById('snowballList');
+    
+    // Avalanche: Highest Interest First
+    const avalanche = [...allDebts].sort((a, b) => b.rate - a.rate);
+    avalancheDiv.innerHTML = avalanche.map((d, i) => `<div class="flex justify-between text-sm"><span class="font-semibold text-forest-900 dark:text-white">${i+1}. ${d.name}</span> <span class="text-red-500">${d.rate}%</span></div>`).join('');
+    
+    // Snowball: Smallest Balance First
+    const snowball = [...allDebts].sort((a, b) => (a.principal - (a.paid||0)) - (b.principal - (b.paid||0)));
+    snowballDiv.innerHTML = snowball.map((d, i) => `<div class="flex justify-between text-sm"><span class="font-semibold text-forest-900 dark:text-white">${i+1}. ${d.name}</span> <span class="text-red-500">₹${(d.principal - (d.paid||0)).toLocaleString('en-IN')}</span></div>`).join('');
+    
+    ui.openSheet(ui.strategySheet);
+  });
+
+  // Render Amortization Table
+  function showAmortization(id) {
+    const debt = dataMap.get(id);
+    if (!debt) return;
+    
+    document.getElementById('amortTitle').innerText = `${debt.name} Schedule`;
+    const tbody = document.getElementById('amortTable');
+    tbody.innerHTML = '';
+    
+    let balance = debt.principal - (debt.paid || 0);
+    const r = (debt.rate / 12) / 100;
+    const emi = debt.emi;
+    let month = 1;
+    let totalInterest = 0;
+
+    // Safety limit to prevent infinite loops on 0% or bad data
+    while (balance > 0.5 && month <= debt.tenure + 100) {
+      const interest = balance * r;
+      totalInterest += interest;
+      let principalPaid = emi - interest;
+      
+      if (balance < principalPaid) principalPaid = balance;
+      balance -= principalPaid;
+
+      tbody.innerHTML += `
+        <div class="grid grid-cols-3 text-sm border-b border-gray-50 dark:border-gray-700 py-2">
+          <span class="text-gray-500 dark:text-gray-400">M${month}</span>
+          <span class="text-center font-semibold text-forest-900 dark:text-white">₹${Math.round(principalPaid).toLocaleString('en-IN')}</span>
+          <span class="text-right text-red-500">₹${Math.round(interest).toLocaleString('en-IN')}</span>
+        </div>
+      `;
+      month++;
+    }
+    
+    // Add summary row
+    tbody.innerHTML += `
+      <div class="mt-4 p-3 bg-red-50 dark:bg-gray-700 rounded-xl flex justify-between text-sm">
+        <span class="font-semibold dark:text-white">Total Future Interest:</span>
+        <span class="font-bold text-red-600">₹${Math.round(totalInterest).toLocaleString('en-IN')}</span>
+      </div>
+    `;
+
+    ui.openSheet(ui.amortizationSheet);
   }
 
   if (list) {
     const q = query(collection(db, "debts"), orderBy("timestamp", "desc"));
     onSnapshot(q, (snapshot) => {
-      list.innerHTML = ''; dataMap.clear(); let localTotal = 0;
+      list.innerHTML = ''; dataMap.clear(); 
+      let localTotal = 0;
+      allDebts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      if (snapshot.empty) {
+      if (allDebts.length === 0) {
         list.innerHTML = '<p class="text-center text-forest-400 py-10 text-sm">No debts registered.</p>';
         if (totalDisplay) totalDisplay.innerText = '₹0';
         return;
       }
 
-      snapshot.forEach((docSnap) => {
-        const debt = docSnap.data();
+      allDebts.forEach((debt) => {
         const outstanding = debt.principal - (debt.paid || 0); 
-        dataMap.set(docSnap.id, debt);
+        dataMap.set(debt.id, debt);
         localTotal += outstanding;
         
         const progress = Math.min(100, ((debt.paid || 0) / debt.principal) * 100).toFixed(0);
+        const rateLabel = debt.rate ? `<span class="bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 text-[9px] px-1.5 py-0.5 rounded ml-2">${debt.rate}% APR</span>` : '';
 
         list.innerHTML += `
-          <div data-id="${docSnap.id}" class="edit-card cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card border border-red-50 dark:border-gray-700 flex flex-col gap-2 active:scale-[0.98]">
+          <div data-id="${debt.id}" class="edit-card cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card border border-red-50 dark:border-gray-700 flex flex-col gap-2 active:scale-[0.98]">
             <div class="flex justify-between items-center">
-              <p class="font-semibold text-forest-900 dark:text-white">${debt.name}</p>
+              <p class="font-semibold text-forest-900 dark:text-white flex items-center">${debt.name} ${rateLabel}</p>
               <p class="font-display font-semibold text-xl text-red-600">₹${outstanding.toLocaleString('en-IN')}</p>
             </div>
             <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
               <div class="bg-green-500 h-1.5 rounded-full" style="width: ${progress}%"></div>
             </div>
-            <div class="flex justify-between text-[10px] text-gray-400">
-              <p>${debt.emi > 0 ? `EMI: ₹${debt.emi.toLocaleString('en-IN')}` : 'No EMI set'}</p>
-              <p>${progress}% Paid Off</p>
+            <div class="flex justify-between items-center mt-1">
+              <div class="text-[10px] text-gray-400">
+                <p>EMI: ₹${Math.round(debt.emi).toLocaleString('en-IN')}</p>
+                <p>${progress}% Paid</p>
+              </div>
+              <button type="button" class="amort-btn text-[10px] uppercase font-bold tracking-wider text-forest-500 hover:text-forest-700 bg-forest-50 dark:bg-gray-700 px-2 py-1 rounded-lg transition-colors">Schedule</button>
             </div>
           </div>
         `;
@@ -117,21 +179,26 @@ export function initDebt(ui) {
       const card = e.target.closest('.edit-card');
       if (!card) return;
       const id = card.dataset.id;
+      
+      // Intercept Amortization button click
+      if (e.target.closest('.amort-btn')) {
+        showAmortization(id);
+        return;
+      }
+
+      // Normal Edit Click
       const debt = dataMap.get(id);
       if (!debt) return;
 
       currentEditId = id;
-
       document.getElementById('debtPrincipal').value = debt.principal;
       document.getElementById('debtPaid').value = debt.paid || 0;
       document.getElementById('debtName').value = debt.name || '';
-      document.getElementById('debtEMI').value = debt.emi || '';
+      document.getElementById('debtRate').value = debt.rate || '';
+      document.getElementById('debtTenure').value = debt.tenure || '';
       
-      // UX 11 FIX: Restore the date properly during editing
       const elDate = document.getElementById('debtDate');
-      if (elDate && debt.date) {
-        elDate.value = debt.date.split('T')[0];
-      }
+      if (elDate && debt.date) elDate.value = debt.date.split('T')[0];
 
       document.getElementById('deleteDebtBtn')?.classList.remove('hidden');
       const saveBtn = document.getElementById('saveDebtBtn');
