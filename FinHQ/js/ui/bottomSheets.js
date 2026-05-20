@@ -8,7 +8,7 @@ export function initUI() {
   const debtForm = document.getElementById('debtFormSheet');
   const plannerForm = document.getElementById('plannerFormSheet');
   const sipForm = document.getElementById('sipFormSheet');
-  
+  const fuelForm = document.getElementById('fuelFormSheet');
   // Utility and advanced tool sheets
   const confirmSheet = document.getElementById('confirmSheet'); 
   const strategySheet = document.getElementById('strategySheet'); 
@@ -24,7 +24,8 @@ export function initUI() {
     sipForm, 
     confirmSheet, 
     strategySheet, 
-    amortizationSheet
+    amortizationSheet,
+    fuelForm
   ].filter(Boolean);
   
   let currentConfirmCallback = null;
@@ -81,6 +82,11 @@ export function initUI() {
     openSheet(sipForm);
   });
 
+  document.getElementById('showFuelFormBtn')?.addEventListener('click', () => {
+    document.dispatchEvent(new Event('resetFuelForm')); 
+    openSheet(fuelForm);
+  });
+
   // --- CUSTOM CONFIRM DIALOG ---
   function showConfirm(title, message, callback) {
     const t = document.getElementById('confirmTitle');
@@ -117,6 +123,7 @@ export function initUI() {
     plannerForm,
     sipForm,
     strategySheet, 
-    amortizationSheet 
+    amortizationSheet,
+    fuelForm
   };
 }
