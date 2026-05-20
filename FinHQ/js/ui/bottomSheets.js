@@ -4,10 +4,11 @@ export function initUI() {
   const txnForm = document.getElementById('txnFormSheet');
   const assetForm = document.getElementById('assetFormSheet');
   const debtForm = document.getElementById('debtFormSheet');
+  const confirmSheet = document.getElementById('confirmSheet'); // NEW
   
-  const allSheets = [addMenu, txnForm, assetForm, debtForm];
+  const allSheets = [addMenu, txnForm, assetForm, debtForm, confirmSheet];
+  let currentConfirmCallback = null;
 
-  // Make openSheet public
   function openSheet(sheetElement) {
     allSheets.forEach(s => s.classList.add('translate-y-full'));
     sheetElement.classList.remove('hidden');
@@ -27,23 +28,23 @@ export function initUI() {
     }, 300);
   }
 
+  // CUSTOM CONFIRM MODAL
+  function showConfirm(title, message, callback) {
+    document.getElementById('confirmTitle').innerText = title;
+    document.getElementById('confirmMessage').innerText = message;
+    currentConfirmCallback = callback;
+    openSheet(confirmSheet);
+  }
+
+  document.getElementById('cancelConfirmBtn')?.addEventListener('click', closeAll);
+  document.getElementById('executeConfirmBtn')?.addEventListener('click', () => {
+    if (currentConfirmCallback) currentConfirmCallback();
+    closeAll();
+  });
+
   document.getElementById('fabBtn')?.addEventListener('click', () => openSheet(addMenu));
-  
-  // Custom Triggers: When opening an "Add" sheet, broadcast an event to reset the form data
-  document.getElementById('showTxnFormBtn')?.addEventListener('click', () => {
-    document.dispatchEvent(new Event('resetTxnForm')); openSheet(txnForm);
-  });
-  document.getElementById('showAssetFormBtn')?.addEventListener('click', () => {
-    document.dispatchEvent(new Event('resetAssetForm')); openSheet(assetForm);
-  });
-  document.getElementById('showDebtFormBtn')?.addEventListener('click', () => {
-    document.dispatchEvent(new Event('resetDebtForm')); openSheet(debtForm);
-  });
-  
   document.querySelectorAll('.closeSheetBtn').forEach(btn => btn.addEventListener('click', closeAll));
-  document.querySelectorAll('.backToMenuBtn').forEach(btn => btn.addEventListener('click', () => openSheet(addMenu)));
   overlay?.addEventListener('click', closeAll);
 
-  // Return the specific forms so feature files can command them to open
-  return { closeAll, openSheet, txnForm, assetForm, debtForm };
+  return { closeAll, openSheet, showConfirm, txnForm, assetForm, debtForm };
 }
