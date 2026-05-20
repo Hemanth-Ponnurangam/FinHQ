@@ -4,27 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>FinHQ — Hub</title>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-  
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: { extend: { colors: { forest: { 900: '#0D3B2A', 800: '#164D38', 500: '#3D9162', 400: '#52B788', 50: '#F0F7F4' }, cream: '#FAFCF8', gold: '#C8963E' }, fontFamily: { display: ['"Cormorant Garamond"', 'serif'], body: ['"DM Sans"', 'sans-serif'] }, boxShadow: { card: '0 4px 12px -4px rgba(13,59,42,0.1), 0 0 0 1px rgba(13,59,42,0.02)' } } }
-    }
+    tailwind.config = { darkMode: 'class', theme: { extend: { colors: { forest: { 900: '#0D3B2A', 800: '#164D38', 500: '#3D9162', 400: '#52B788', 50: '#F0F7F4' }, cream: '#FAFCF8', gold: '#C8963E' }, fontFamily: { display: ['"Cormorant Garamond"', 'serif'], body: ['"DM Sans"', 'sans-serif'] }, boxShadow: { card: '0 4px 12px -4px rgba(13,59,42,0.1)' } } } }
   </script>
-
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Hide scrollbar for clean UI */
+    ::-webkit-scrollbar { display: none; }
+  </style>
 </head>
-<body class="bg-cream dark:bg-gray-900 text-forest-900 dark:text-gray-100 antialiased selection:bg-forest-400 transition-colors duration-300">
+<body class="bg-cream dark:bg-gray-900 text-forest-900 dark:text-gray-100 antialiased transition-colors duration-300">
 
-  <div class="max-w-md mx-auto min-h-screen bg-cream dark:bg-gray-900 flex flex-col relative pb-10 shadow-2xl transition-colors duration-300">
-    
+  <div class="max-w-md mx-auto min-h-screen bg-cream dark:bg-gray-900 flex flex-col relative pb-10 shadow-2xl">
     <header class="px-6 pt-8 pb-4 flex justify-between items-center">
       <div class="font-display text-3xl font-semibold tracking-tight">Fin<span class="text-gold">HQ</span></div>
       <button id="darkModeToggle" class="p-2 rounded-full bg-forest-50 dark:bg-gray-800 text-forest-900 dark:text-gold"><i data-lucide="moon" class="w-5 h-5"></i></button>
@@ -39,11 +33,11 @@
             <p class="text-xs text-forest-400 font-semibold tracking-widest uppercase mb-1 relative z-10">Total Net Worth</p>
             <p id="netWorthDisplay" class="font-display text-4xl font-semibold relative z-10">₹0</p>
           </div>
-          
           <div class="grid grid-cols-2 gap-3">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 relative">
               <p class="text-[10px] text-forest-400 font-semibold tracking-widest uppercase mb-1">Savings Rate</p>
               <p id="savingsRateDisplay" class="font-display text-2xl font-semibold text-forest-900 dark:text-white">0%</p>
+              <p id="savingsRateWarning" class="text-[9px] text-red-400 absolute bottom-2 left-5 hidden">Log income to calculate</p>
             </div>
             <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700">
               <p class="text-[10px] text-forest-400 font-semibold tracking-widest uppercase mb-1">Month Spend</p>
@@ -55,58 +49,72 @@
         <section>
           <h2 class="text-xs font-semibold text-forest-500 tracking-widest uppercase mb-4 px-1">Modules</h2>
           <div class="grid grid-cols-2 gap-3">
-            
-            <button id="openLedgerBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-forest-50 dark:hover:bg-gray-700 transition-colors text-left active:scale-95 duration-200 w-full"><div class="w-10 h-10 rounded-full bg-forest-50 dark:bg-gray-700 flex items-center justify-center text-forest-500"><i data-lucide="book-text" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Ledger</p><p class="text-xs text-forest-400 mt-0.5">Daily cashflow</p></div></button>
-            <button id="openWealthBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-forest-50 dark:hover:bg-gray-700 transition-colors text-left active:scale-95 duration-200 w-full"><div class="w-10 h-10 rounded-full bg-orange-50 dark:bg-gray-700 flex items-center justify-center text-gold"><i data-lucide="trending-up" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Wealth</p><p class="text-xs text-forest-400 mt-0.5">Asset & ROI</p></div></button>
-            <button id="openDebtBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors text-left active:scale-95 duration-200 w-full"><div class="w-10 h-10 rounded-full bg-red-50 dark:bg-gray-700 flex items-center justify-center text-red-500"><i data-lucide="landmark" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Debt</p><p class="text-xs text-forest-400 mt-0.5">Loans & EMI</p></div></button>
-            <button id="openAnalyticsBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors text-left active:scale-95 duration-200 w-full"><div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-gray-700 flex items-center justify-center text-blue-500"><i data-lucide="pie-chart" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Analytics</p><p class="text-xs text-forest-400 mt-0.5">Trends & Charts</p></div></button>
-            
-            <button class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 opacity-50 cursor-not-allowed text-left w-full"><div class="w-10 h-10 rounded-full bg-purple-50 dark:bg-gray-700 flex items-center justify-center text-purple-500"><i data-lucide="target" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Goals</p><p class="text-xs text-forest-400 mt-0.5">Scenario Planner</p></div></button>
-            <button class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 opacity-50 cursor-not-allowed text-left w-full"><div class="w-10 h-10 rounded-full bg-pink-50 dark:bg-gray-700 flex items-center justify-center text-pink-500"><i data-lucide="repeat" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Subs & SIPs</p><p class="text-xs text-forest-400 mt-0.5">Automated Engine</p></div></button>
+            <button id="openLedgerBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-forest-50 dark:hover:bg-gray-700 transition-colors text-left w-full"><div class="w-10 h-10 rounded-full bg-forest-50 dark:bg-gray-700 flex items-center justify-center text-forest-500"><i data-lucide="book-text" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Ledger</p></div></button>
+            <button id="openWealthBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-forest-50 dark:hover:bg-gray-700 transition-colors text-left w-full"><div class="w-10 h-10 rounded-full bg-orange-50 dark:bg-gray-700 flex items-center justify-center text-gold"><i data-lucide="trending-up" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Wealth</p></div></button>
+            <button id="openDebtBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors text-left w-full"><div class="w-10 h-10 rounded-full bg-red-50 dark:bg-gray-700 flex items-center justify-center text-red-500"><i data-lucide="landmark" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Debt</p></div></button>
+            <button id="openAnalyticsBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors text-left w-full"><div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-gray-700 flex items-center justify-center text-blue-500"><i data-lucide="pie-chart" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Analytics</p></div></button>
           </div>
         </section>
       </div> 
 
-      <div id="ledgerView" class="hidden space-y-6">
-        <div class="flex items-center gap-4 pt-2"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white hover:bg-forest-50"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Ledger</h2></div>
+      <div id="ledgerView" class="hidden space-y-4">
+        <div class="flex items-center gap-4 pt-2"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Ledger</h2></div>
+        
+        <div class="flex gap-2 mb-4">
+          <input type="text" id="ledgerSearch" placeholder="Search..." class="flex-1 p-3 rounded-xl bg-white dark:bg-gray-800 dark:text-white shadow-card border-none outline-none">
+          <select id="ledgerMonthFilter" class="p-3 rounded-xl bg-white dark:bg-gray-800 dark:text-white shadow-card border-none outline-none">
+            <option value="all">All Time</option>
+            </select>
+        </div>
+
         <div id="transactionList" class="space-y-3 pb-24"></div>
       </div>
 
       <div id="wealthView" class="hidden space-y-6">
-        <div class="flex items-center gap-4 pt-2"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white hover:bg-forest-50"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Wealth Portfolio</h2></div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-card border border-forest-50/50 dark:border-gray-700 mb-6"><p class="text-xs text-forest-400 font-semibold tracking-widest uppercase mb-1">Total Assets</p><p id="totalWealthDisplay" class="font-display text-4xl font-semibold dark:text-white">₹0</p></div>
+        <div class="flex items-center gap-4 pt-2"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Portfolio</h2></div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-card"><p class="text-xs text-forest-400 font-semibold tracking-widest uppercase mb-1">Total Assets</p><p id="totalWealthDisplay" class="font-display text-4xl font-semibold dark:text-white">₹0</p></div>
         <div id="assetList" class="space-y-3 pb-24"></div>
       </div>
 
       <div id="debtView" class="hidden space-y-6">
-        <div class="flex items-center gap-4 pt-2"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white hover:bg-forest-50"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Debt</h2></div>
-        <div class="bg-red-50 dark:bg-gray-800 rounded-2xl p-6 shadow-card border border-red-100 dark:border-gray-700 mb-6"><p class="text-xs text-red-400 font-semibold tracking-widest uppercase mb-1">Total Liabilities</p><p id="totalDebtDisplay" class="font-display text-4xl font-semibold text-red-600">₹0</p></div>
+        <div class="flex items-center gap-4 pt-2"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Debt</h2></div>
+        <div class="bg-red-50 dark:bg-gray-800 rounded-2xl p-6 shadow-card border border-red-100 dark:border-gray-700"><p class="text-xs text-red-400 font-semibold tracking-widest uppercase mb-1">Total Outstanding</p><p id="totalDebtDisplay" class="font-display text-4xl font-semibold text-red-600">₹0</p></div>
         <div id="debtList" class="space-y-3 pb-24"></div>
       </div>
 
       <div id="analyticsView" class="hidden space-y-6">
-        <div class="flex items-center gap-4 pt-2"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white hover:bg-forest-50"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Analytics</h2></div>
+        <div class="flex items-center justify-between pt-2">
+          <div class="flex items-center gap-4"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Analytics</h2></div>
+          <select id="analyticsTimeFilter" class="p-2 rounded-xl bg-white dark:bg-gray-800 dark:text-white shadow-card outline-none text-sm">
+            <option value="thisMonth">This Month</option>
+            <option value="last3Months">Last 3 Months</option>
+            <option value="thisYear">This Year</option>
+            <option value="allTime" selected>All Time</option>
+          </select>
+        </div>
         
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700">
-          <h3 class="text-sm font-semibold text-forest-900 dark:text-white mb-4">Expense Breakdown</h3>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card">
+          <h3 class="text-sm font-semibold dark:text-white mb-4">Cashflow Trend (6M)</h3>
+          <canvas id="cashflowLineChart" class="w-full h-48"></canvas>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card">
+          <h3 class="text-sm font-semibold dark:text-white mb-4">Expense Breakdown</h3>
           <canvas id="expensePieChart" class="w-full h-48"></canvas>
         </div>
-
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 pb-24">
-          <h3 class="text-sm font-semibold text-forest-900 dark:text-white mb-4">Asset Allocation</h3>
-          <canvas id="assetDonutChart" class="w-full h-48"></canvas>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card pb-24">
+          <h3 class="text-sm font-semibold dark:text-white mb-4">Income Sources</h3>
+          <canvas id="incomePieChart" class="w-full h-48"></canvas>
         </div>
       </div>
-
     </main>
 
-    <button id="fabBtn" class="fixed bottom-6 right-6 lg:right-[calc(50%-13rem)] w-14 h-14 bg-forest-900 text-gold rounded-full shadow-lg flex items-center justify-center hover:bg-forest-800 active:scale-95 transition-all z-40"><i data-lucide="plus" class="w-6 h-6"></i></button>
+    <button id="fabBtn" class="fixed bottom-6 right-6 lg:right-[calc(50%-13rem)] w-14 h-14 bg-forest-900 text-gold rounded-full shadow-lg flex items-center justify-center z-40"><i data-lucide="plus" class="w-6 h-6"></i></button>
   </div> 
 
   <div id="bottomSheetOverlay" class="fixed inset-0 bg-forest-950/40 backdrop-blur-sm z-40 hidden opacity-0 transition-opacity"></div>
   
-  <div id="addMenuSheet" class="fixed inset-x-0 bottom-0 max-w-md mx-auto bg-white dark:bg-gray-800 rounded-t-3xl shadow-[0_-20px_40px_rgba(13,59,42,0.1)] p-6 z-50 transform translate-y-full transition-transform duration-300">
-    <div class="flex justify-between items-center mb-6"><h3 class="font-display text-2xl font-semibold dark:text-white">Add New...</h3><button class="closeSheetBtn text-forest-400 bg-forest-50 dark:bg-gray-700 p-2 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+  <div id="addMenuSheet" class="fixed inset-x-0 bottom-0 max-w-md mx-auto bg-white dark:bg-gray-800 rounded-t-3xl p-6 z-50 transform translate-y-full transition-transform">
+    <div class="flex justify-between items-center mb-6"><h3 class="font-display text-2xl font-semibold dark:text-white">Add New</h3><button class="closeSheetBtn text-forest-400 bg-forest-50 dark:bg-gray-700 p-2 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button></div>
     <div class="grid grid-cols-3 gap-3">
       <button id="showTxnFormBtn" class="bg-forest-50 dark:bg-gray-700 rounded-xl p-3 flex flex-col items-center gap-2 dark:text-white text-sm font-semibold"><i data-lucide="book-text" class="w-6 h-6 text-forest-500"></i> Txn</button>
       <button id="showAssetFormBtn" class="bg-orange-50 dark:bg-gray-700 rounded-xl p-3 flex flex-col items-center gap-2 dark:text-white text-sm font-semibold"><i data-lucide="trending-up" class="w-6 h-6 text-gold"></i> Asset</button>
@@ -114,113 +122,75 @@
     </div>
   </div>
 
-  <div id="txnFormSheet" class="fixed inset-x-0 bottom-0 max-w-md mx-auto bg-white dark:bg-gray-800 rounded-t-3xl shadow-[0_-20px_40px_rgba(13,59,42,0.1)] p-6 z-50 transform translate-y-full transition-transform duration-300 max-h-[90vh] overflow-y-auto hidden">
+  <datalist id="presetCategories">
+    <option value="Food & Dining"><option value="Groceries"><option value="Transport"><option value="Shopping"><option value="Housing"><option value="Utilities"><option value="Salary"><option value="Investments">
+  </datalist>
+
+  <div id="txnFormSheet" class="fixed inset-x-0 bottom-0 max-w-md mx-auto bg-white dark:bg-gray-800 rounded-t-3xl p-6 z-50 transform translate-y-full transition-transform max-h-[90vh] overflow-y-auto hidden">
     <div class="flex justify-between items-center mb-6"><button class="backToMenuBtn text-forest-400"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h3 class="font-display text-xl font-semibold dark:text-white">Transaction</h3><button class="closeSheetBtn text-forest-400 bg-forest-50 dark:bg-gray-700 p-2 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-    <form id="ledgerForm" class="space-y-5">
-      <div><input type="number" id="txnAmount" required class="w-full font-display text-4xl font-semibold text-forest-900 dark:text-white border-b-2 border-forest-100 dark:border-gray-700 pb-2 focus:outline-none bg-transparent placeholder-forest-200 dark:placeholder-gray-500" placeholder="₹0"></div>
-      <div><input type="text" id="txnTitle" required class="w-full text-lg text-forest-900 dark:text-white border-b-2 border-forest-100 dark:border-gray-700 pb-2 focus:outline-none bg-transparent placeholder-forest-200 dark:placeholder-gray-500" placeholder="What was it for? (e.g. 775 DC Motors)"></div>
-      
-      <div class="grid grid-cols-2 gap-4">
-        <select id="txnType" class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none"><option value="expense">Expense</option><option value="income">Income</option></select>
-        <input type="date" id="txnDate" required class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none">
-      </div>
-
-      <div class="grid grid-cols-2 gap-4">
-        <input type="text" id="txnTag" class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none placeholder-forest-300" placeholder="Category">
-        <input type="text" id="txnLabel" class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none placeholder-forest-300" placeholder="Label">
-      </div>
-      
-      <div class="flex gap-3 mt-4">
-        <button type="button" id="deleteTxnBtn" class="hidden w-1/3 py-4 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-2xl font-semibold transition-colors">Delete</button>
-        <button type="submit" id="saveTxnBtn" class="flex-1 py-4 bg-forest-900 dark:bg-forest-500 text-white rounded-2xl font-semibold transition-colors">Save</button>
-      </div>
+    <form id="ledgerForm" class="space-y-4">
+      <div><input type="number" id="txnAmount" required class="w-full font-display text-4xl font-semibold dark:text-white border-b-2 border-forest-100 dark:border-gray-700 pb-2 focus:outline-none bg-transparent" placeholder="₹0"></div>
+      <div><input type="text" id="txnTitle" required class="w-full text-lg dark:text-white border-b-2 border-forest-100 dark:border-gray-700 pb-2 focus:outline-none bg-transparent" placeholder="What was it for?"></div>
+      <div class="grid grid-cols-2 gap-4"><select id="txnType" class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none"><option value="expense">Expense</option><option value="income">Income</option></select><input type="date" id="txnDate" required class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none"></div>
+      <div class="grid grid-cols-2 gap-4"><input type="text" id="txnTag" list="presetCategories" class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none" placeholder="Category"><input type="text" id="txnLabel" class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none" placeholder="Label"></div>
+      <div class="flex gap-3 mt-4"><button type="button" id="deleteTxnBtn" class="hidden w-1/3 py-4 bg-red-100 text-red-600 rounded-2xl font-semibold">Delete</button><button type="submit" id="saveTxnBtn" class="flex-1 py-4 bg-forest-900 text-white rounded-2xl font-semibold">Save</button></div>
     </form>
   </div>
 
-  <div id="assetFormSheet" class="fixed inset-x-0 bottom-0 max-w-md mx-auto bg-white dark:bg-gray-800 rounded-t-3xl shadow-[0_-20px_40px_rgba(13,59,42,0.1)] p-6 z-50 transform translate-y-full transition-transform duration-300 max-h-[90vh] overflow-y-auto hidden">
-    <div class="flex justify-between items-center mb-6"><button class="backToMenuBtn text-forest-400"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h3 class="font-display text-xl font-semibold dark:text-white">Investment</h3><button class="closeSheetBtn text-forest-400 bg-forest-50 dark:bg-gray-700 p-2 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-    <form id="assetForm" class="space-y-4">
-      <div><input type="text" id="assetName" required class="w-full text-lg dark:text-white border-b-2 border-forest-100 dark:border-gray-700 pb-2 focus:outline-none bg-transparent placeholder-forest-200" placeholder="Asset Name (e.g. NIFTY 50)"></div>
-      
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="text-[10px] text-forest-400 uppercase tracking-wider font-semibold">Asset Class</label>
-          <select id="assetCategory" class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white mt-1 outline-none">
-            <option value="Equity">Stocks / MFs</option>
-            <option value="Crypto">Crypto</option>
-            <option value="Gold">Gold</option>
-            <option value="Real Estate">Real Estate</option>
-            <option value="Fixed">Fixed Income (FD)</option>
-          </select>
-        </div>
-        <div>
-          <label class="text-[10px] text-forest-400 uppercase tracking-wider font-semibold">Date</label>
-          <input type="date" id="assetDate" required class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white mt-1 outline-none">
-        </div>
-      </div>
-
-      <div class="grid grid-cols-3 gap-3">
-        <div>
-          <label class="text-[10px] text-forest-400 uppercase tracking-wider font-semibold">Qty</label>
-          <input type="number" id="assetQty" step="any" class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white mt-1" placeholder="0">
-        </div>
-        <div>
-          <label class="text-[10px] text-forest-400 uppercase tracking-wider font-semibold">Buy Price</label>
-          <input type="number" id="assetBuyPrice" step="any" required class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white mt-1" placeholder="₹">
-        </div>
-        <div>
-          <label class="text-[10px] text-forest-400 uppercase tracking-wider font-semibold">Current Price</label>
-          <input type="number" id="assetCurrentPrice" step="any" required class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white mt-1" placeholder="₹">
-        </div>
-      </div>
-      
-      <div class="flex gap-3 mt-4">
-        <button type="button" id="deleteAssetBtn" class="hidden w-1/3 py-4 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-2xl font-semibold transition-colors">Delete</button>
-        <button type="submit" id="saveAssetBtn" class="flex-1 py-4 bg-orange-500 text-white rounded-2xl font-semibold transition-colors">Save Asset</button>
-      </div>
-    </form>
-  </div>
-
-  <div id="debtFormSheet" class="fixed inset-x-0 bottom-0 max-w-md mx-auto bg-white dark:bg-gray-800 rounded-t-3xl shadow-[0_-20px_40px_rgba(13,59,42,0.1)] p-6 z-50 transform translate-y-full transition-transform duration-300 max-h-[90vh] overflow-y-auto hidden">
+  <div id="debtFormSheet" class="fixed inset-x-0 bottom-0 max-w-md mx-auto bg-white dark:bg-gray-800 rounded-t-3xl p-6 z-50 transform translate-y-full transition-transform max-h-[90vh] overflow-y-auto hidden">
     <div class="flex justify-between items-center mb-6"><button class="backToMenuBtn text-forest-400"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h3 class="font-display text-xl font-semibold dark:text-white">Debt / Loan</h3><button class="closeSheetBtn text-forest-400 bg-forest-50 dark:bg-gray-700 p-2 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button></div>
     <form id="debtForm" class="space-y-4">
-      <div><input type="number" id="debtPrincipal" required class="w-full font-display text-4xl font-semibold text-red-500 border-b-2 border-forest-100 dark:border-gray-700 pb-2 bg-transparent focus:outline-none" placeholder="₹0"></div>
+      <div>
+        <label class="text-[10px] text-forest-400 uppercase font-semibold">Total Principal</label>
+        <input type="number" id="debtPrincipal" required class="w-full font-display text-4xl font-semibold text-red-500 border-b-2 border-forest-100 dark:border-gray-700 pb-2 bg-transparent focus:outline-none" placeholder="₹0">
+      </div>
+      <div>
+        <label class="text-[10px] text-forest-400 uppercase font-semibold">Amount Paid Off</label>
+        <input type="number" id="debtPaid" class="w-full font-display text-2xl font-semibold text-green-500 border-b-2 border-forest-100 dark:border-gray-700 pb-2 bg-transparent focus:outline-none" placeholder="₹0">
+      </div>
       <div><input type="text" id="debtName" required class="w-full text-lg dark:text-white border-b-2 border-forest-100 dark:border-gray-700 pb-2 bg-transparent focus:outline-none" placeholder="Loan Name"></div>
-      <div class="grid grid-cols-2 gap-4">
-        <input type="date" id="debtDate" required class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none">
-        <input type="number" id="debtEMI" class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none" placeholder="EMI Amount">
-      </div>
-      
-      <div class="flex gap-3 mt-4">
-        <button type="button" id="deleteDebtBtn" class="hidden w-1/3 py-4 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-2xl font-semibold transition-colors">Delete</button>
-        <button type="submit" id="saveDebtBtn" class="flex-1 py-4 bg-red-500 text-white rounded-2xl font-semibold transition-colors">Save Debt</button>
-      </div>
+      <div class="grid grid-cols-2 gap-4"><input type="date" id="debtDate" required class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none"><input type="number" id="debtEMI" class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none" placeholder="EMI Amount"></div>
+      <div class="flex gap-3 mt-4"><button type="button" id="deleteDebtBtn" class="hidden w-1/3 py-4 bg-red-100 text-red-600 rounded-2xl font-semibold">Delete</button><button type="submit" id="saveDebtBtn" class="flex-1 py-4 bg-red-500 text-white rounded-2xl font-semibold">Save Debt</button></div>
     </form>
+  </div>
+
+  <div id="confirmSheet" class="fixed inset-x-0 bottom-0 max-w-md mx-auto bg-white dark:bg-gray-800 rounded-t-3xl p-6 z-[60] transform translate-y-full transition-transform hidden">
+    <h3 class="font-display text-2xl font-semibold dark:text-white mb-2" id="confirmTitle">Are you sure?</h3>
+    <p class="text-forest-400 dark:text-gray-400 text-sm mb-6" id="confirmMessage">This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button id="cancelConfirmBtn" class="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-forest-900 dark:text-white rounded-xl font-semibold">Cancel</button>
+      <button id="executeConfirmBtn" class="flex-1 py-3 bg-red-500 text-white rounded-xl font-semibold">Delete</button>
+    </div>
   </div>
 
   <script type="module" src="js/app.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
-      // Simple Dark Mode Toggle Logic
+      // DARK MODE PERSISTENCE FIX
       const toggleBtn = document.getElementById('darkModeToggle');
       const htmlEl = document.documentElement;
       const icon = toggleBtn.querySelector('i');
       
+      if (localStorage.getItem('theme') === 'dark') {
+        htmlEl.classList.add('dark');
+        icon.setAttribute('data-lucide', 'sun');
+      }
+
       toggleBtn.addEventListener('click', () => {
         htmlEl.classList.toggle('dark');
         if (htmlEl.classList.contains('dark')) {
+          localStorage.setItem('theme', 'dark');
           icon.setAttribute('data-lucide', 'sun');
         } else {
+          localStorage.setItem('theme', 'light');
           icon.setAttribute('data-lucide', 'moon');
         }
         lucide.createIcons();
       });
 
-      // Default dates to today
       const today = new Date().toISOString().split('T')[0];
       if(document.getElementById('txnDate')) document.getElementById('txnDate').value = today;
-      if(document.getElementById('assetDate')) document.getElementById('assetDate').value = today;
       if(document.getElementById('debtDate')) document.getElementById('debtDate').value = today;
     });
   </script>
