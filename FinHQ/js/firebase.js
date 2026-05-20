@@ -1,3 +1,5 @@
+
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { store } from './store.js';
@@ -14,12 +16,13 @@ const firebaseConfig = {
   measurementId: "G-FB35WP6QNW"
 };
 
+
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
-// Single coordinated load for the entire application
 export function initGlobalListeners() {
-  const collections = ['transactions', 'assets', 'debts', 'budgets', 'goals', 'recurring'];
+  // NEW: Added 'fuel' to the sync loop
+  const collections = ['transactions', 'assets', 'debts', 'budgets', 'goals', 'recurring', 'fuel'];
   let loadedCount = 0;
 
   collections.forEach(col => {
@@ -27,12 +30,11 @@ export function initGlobalListeners() {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       store.update(col, data);
       
-      // Only reveal the UI once the initial data load is complete
       if (!store.isLoaded) {
         loadedCount++;
         if (loadedCount === collections.length) store.setLoaded();
       }
-    }, (err) => console.error(`Offline or Error syncing ${col}:`, err));
+    }, (err) => console.error(`Sync error on ${col}:`, err));
   });
 }
 
