@@ -4,12 +4,13 @@ export function initUI() {
   const txnForm = document.getElementById('txnFormSheet');
   const assetForm = document.getElementById('assetFormSheet');
   const debtForm = document.getElementById('debtFormSheet');
-  const confirmSheet = document.getElementById('confirmSheet'); // NEW
+  const confirmSheet = document.getElementById('confirmSheet'); 
   
   const allSheets = [addMenu, txnForm, assetForm, debtForm, confirmSheet];
   let currentConfirmCallback = null;
 
   function openSheet(sheetElement) {
+    if (!sheetElement) return;
     allSheets.forEach(s => s.classList.add('translate-y-full'));
     sheetElement.classList.remove('hidden');
     overlay.classList.remove('hidden');
@@ -28,7 +29,21 @@ export function initUI() {
     }, 300);
   }
 
-  // CUSTOM CONFIRM MODAL
+  // --- RESTORED: Add Menu Button Bindings ---
+  document.getElementById('showTxnFormBtn')?.addEventListener('click', () => {
+    document.dispatchEvent(new Event('resetTxnForm')); 
+    openSheet(txnForm);
+  });
+  document.getElementById('showAssetFormBtn')?.addEventListener('click', () => {
+    document.dispatchEvent(new Event('resetAssetForm')); 
+    openSheet(assetForm);
+  });
+  document.getElementById('showDebtFormBtn')?.addEventListener('click', () => {
+    document.dispatchEvent(new Event('resetDebtForm')); 
+    openSheet(debtForm);
+  });
+
+  // Native Confirm Dialog Logic
   function showConfirm(title, message, callback) {
     document.getElementById('confirmTitle').innerText = title;
     document.getElementById('confirmMessage').innerText = message;
@@ -36,6 +51,7 @@ export function initUI() {
     openSheet(confirmSheet);
   }
 
+  // Global UI Bindings
   document.getElementById('cancelConfirmBtn')?.addEventListener('click', closeAll);
   document.getElementById('executeConfirmBtn')?.addEventListener('click', () => {
     if (currentConfirmCallback) currentConfirmCallback();
@@ -44,6 +60,7 @@ export function initUI() {
 
   document.getElementById('fabBtn')?.addEventListener('click', () => openSheet(addMenu));
   document.querySelectorAll('.closeSheetBtn').forEach(btn => btn.addEventListener('click', closeAll));
+  document.querySelectorAll('.backToMenuBtn').forEach(btn => btn.addEventListener('click', () => openSheet(addMenu)));
   overlay?.addEventListener('click', closeAll);
 
   return { closeAll, openSheet, showConfirm, txnForm, assetForm, debtForm };
