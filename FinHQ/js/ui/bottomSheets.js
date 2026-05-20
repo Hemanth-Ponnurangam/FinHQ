@@ -6,11 +6,12 @@ export function initUI() {
   const debtForm = document.getElementById('debtFormSheet');
   const confirmSheet = document.getElementById('confirmSheet'); 
   
-  const allSheets = [addMenu, txnForm, assetForm, debtForm, confirmSheet];
+  // Filter out any nulls just in case the HTML is missing a piece
+  const allSheets = [addMenu, txnForm, assetForm, debtForm, confirmSheet].filter(Boolean);
   let currentConfirmCallback = null;
 
   function openSheet(sheetElement) {
-    if (!sheetElement) return;
+    if (!sheetElement || !overlay) return;
     allSheets.forEach(s => s.classList.add('translate-y-full'));
     sheetElement.classList.remove('hidden');
     overlay.classList.remove('hidden');
@@ -21,6 +22,7 @@ export function initUI() {
   }
 
   function closeAll() {
+    if (!overlay) return;
     overlay.classList.add('opacity-0');
     allSheets.forEach(s => s.classList.add('translate-y-full'));
     setTimeout(() => {
@@ -29,29 +31,27 @@ export function initUI() {
     }, 300);
   }
 
-  // --- RESTORED: Add Menu Button Bindings ---
+  // Bind Add Menu Buttons Safely
   document.getElementById('showTxnFormBtn')?.addEventListener('click', () => {
-    document.dispatchEvent(new Event('resetTxnForm')); 
-    openSheet(txnForm);
+    document.dispatchEvent(new Event('resetTxnForm')); openSheet(txnForm);
   });
   document.getElementById('showAssetFormBtn')?.addEventListener('click', () => {
-    document.dispatchEvent(new Event('resetAssetForm')); 
-    openSheet(assetForm);
+    document.dispatchEvent(new Event('resetAssetForm')); openSheet(assetForm);
   });
   document.getElementById('showDebtFormBtn')?.addEventListener('click', () => {
-    document.dispatchEvent(new Event('resetDebtForm')); 
-    openSheet(debtForm);
+    document.dispatchEvent(new Event('resetDebtForm')); openSheet(debtForm);
   });
 
-  // Native Confirm Dialog Logic
+  // Custom Confirm Dialog
   function showConfirm(title, message, callback) {
-    document.getElementById('confirmTitle').innerText = title;
-    document.getElementById('confirmMessage').innerText = message;
+    const t = document.getElementById('confirmTitle');
+    const m = document.getElementById('confirmMessage');
+    if(t) t.innerText = title;
+    if(m) m.innerText = message;
     currentConfirmCallback = callback;
     openSheet(confirmSheet);
   }
 
-  // Global UI Bindings
   document.getElementById('cancelConfirmBtn')?.addEventListener('click', closeAll);
   document.getElementById('executeConfirmBtn')?.addEventListener('click', () => {
     if (currentConfirmCallback) currentConfirmCallback();
@@ -65,6 +65,3 @@ export function initUI() {
 
   return { closeAll, openSheet, showConfirm, txnForm, assetForm, debtForm };
 }
-
-
-
