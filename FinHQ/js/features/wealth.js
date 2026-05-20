@@ -10,9 +10,9 @@ export function initWealth(ui) {
 
   document.addEventListener('resetAssetForm', () => {
     currentEditId = null;
-    form.reset();
-    document.getElementById('assetDate').value = new Date().toISOString().split('T')[0];
-    document.getElementById('deleteAssetBtn').classList.add('hidden');
+    form?.reset();
+    if(document.getElementById('assetDate')) document.getElementById('assetDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('deleteAssetBtn')?.classList.add('hidden');
     document.getElementById('saveAssetBtn').innerText = 'Save Asset';
   });
 
@@ -29,17 +29,11 @@ export function initWealth(ui) {
         timestamp: new Date(document.getElementById('assetDate').value).getTime()
       };
 
-      try {
-        if (currentEditId) {
-          await updateDoc(doc(db, "assets", currentEditId), payload);
-        } else {
-          await addDoc(collection(db, "assets"), payload);
-        }
-        ui.closeAll();
-      } catch (error) { console.error("Error saving asset:", error); }
+      if (currentEditId) await updateDoc(doc(db, "assets", currentEditId), payload);
+      else await addDoc(collection(db, "assets"), payload);
+      ui.closeAll();
     });
 
-    // Upgraded Delete Logic using the new Custom Confirm UI
     document.getElementById('deleteAssetBtn')?.addEventListener('click', () => {
       ui.showConfirm("Delete Investment?", "This will remove the asset from your portfolio permanently.", async () => {
         await deleteDoc(doc(db, "assets", currentEditId));
@@ -49,7 +43,6 @@ export function initWealth(ui) {
   }
 
   if (list) {
-    // Pagination added here to save Firestore reads!
     const q = query(collection(db, "assets"), orderBy("timestamp", "desc"), limit(100));
     
     onSnapshot(q, (snapshot) => {
@@ -63,9 +56,10 @@ export function initWealth(ui) {
         return;
       }
 
-      snapshot.forEach((document) => {
-        const asset = document.data();
-        const id = document.id;
+      // FIXED: Renamed 'document' to 'docSnap' to prevent global variable collision
+      snapshot.forEach((docSnap) => {
+        const asset = docSnap.data();
+        const id = docSnap.id;
         dataMap.set(id, asset);
         
         const currentValue = asset.qty * asset.currentPrice;
@@ -99,8 +93,9 @@ export function initWealth(ui) {
       if (!card) return;
       const id = card.dataset.id;
       const asset = dataMap.get(id);
+      if (!asset) return; // Safety check
+      
       currentEditId = id;
-
       document.getElementById('assetName').value = asset.name;
       document.getElementById('assetCategory').value = asset.category;
       document.getElementById('assetDate').value = asset.purchaseDate.split('T')[0];
