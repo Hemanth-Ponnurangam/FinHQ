@@ -2,13 +2,14 @@ export function initUI() {
   const overlay = document.getElementById('bottomSheetOverlay');
   const addMenu = document.getElementById('addMenuSheet');
   
-  // All active forms and modules
+  // All active data entry forms
   const txnForm = document.getElementById('txnFormSheet');
   const assetForm = document.getElementById('assetFormSheet');
   const debtForm = document.getElementById('debtFormSheet');
   const plannerForm = document.getElementById('plannerFormSheet');
+  const sipForm = document.getElementById('sipFormSheet');
   
-  // Utility and advanced sheets
+  // Utility and advanced tool sheets
   const confirmSheet = document.getElementById('confirmSheet'); 
   const strategySheet = document.getElementById('strategySheet'); 
   const amortizationSheet = document.getElementById('amortizationSheet'); 
@@ -19,7 +20,8 @@ export function initUI() {
     txnForm, 
     assetForm, 
     debtForm, 
-    plannerForm, 
+    plannerForm,
+    sipForm, 
     confirmSheet, 
     strategySheet, 
     amortizationSheet
@@ -57,7 +59,7 @@ export function initUI() {
   }
 
   // --- BIND ADD MENU BUTTONS ---
-  // Note: showPlannerFormBtn logic is securely handled inside planner.js directly
+  // Note: plannerForm logic is handled directly inside planner.js to manage sub-tabs
   
   document.getElementById('showTxnFormBtn')?.addEventListener('click', () => {
     document.dispatchEvent(new Event('resetTxnForm')); 
@@ -74,13 +76,18 @@ export function initUI() {
     openSheet(debtForm);
   });
 
+  document.getElementById('showSipFormBtn')?.addEventListener('click', () => {
+    document.dispatchEvent(new Event('resetSipForm')); 
+    openSheet(sipForm);
+  });
+
   // --- CUSTOM CONFIRM DIALOG ---
   function showConfirm(title, message, callback) {
     const t = document.getElementById('confirmTitle');
     const m = document.getElementById('confirmMessage');
     
-    if(t) t.innerText = title;
-    if(m) m.innerText = message;
+    if (t) t.innerText = title;
+    if (m) m.innerText = message;
     
     currentConfirmCallback = callback;
     openSheet(confirmSheet);
@@ -99,7 +106,7 @@ export function initUI() {
   document.querySelectorAll('.backToMenuBtn').forEach(btn => btn.addEventListener('click', () => openSheet(addMenu)));
   overlay?.addEventListener('click', closeAll);
 
-  // Expose these elements and functions so your feature files can control them
+  // Expose elements and functions so feature files can control them
   return { 
     closeAll, 
     openSheet, 
@@ -108,6 +115,7 @@ export function initUI() {
     assetForm, 
     debtForm, 
     plannerForm,
+    sipForm,
     strategySheet, 
     amortizationSheet 
   };
