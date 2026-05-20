@@ -1,21 +1,43 @@
 export function initUI() {
   const overlay = document.getElementById('bottomSheetOverlay');
   const addMenu = document.getElementById('addMenuSheet');
+  
+  // All active forms and modules
   const txnForm = document.getElementById('txnFormSheet');
   const assetForm = document.getElementById('assetFormSheet');
   const debtForm = document.getElementById('debtFormSheet');
-  const confirmSheet = document.getElementById('confirmSheet'); 
-  const strategySheet = document.getElementById('strategySheet'); // NEW
-  const amortizationSheet = document.getElementById('amortizationSheet'); // NEW
+  const plannerForm = document.getElementById('plannerFormSheet');
   
-  const allSheets = [addMenu, txnForm, assetForm, debtForm, confirmSheet, strategySheet, amortizationSheet].filter(Boolean);
+  // Utility and advanced sheets
+  const confirmSheet = document.getElementById('confirmSheet'); 
+  const strategySheet = document.getElementById('strategySheet'); 
+  const amortizationSheet = document.getElementById('amortizationSheet'); 
+  
+  // Register ALL sheets here so closeAll() can dismiss them safely
+  const allSheets = [
+    addMenu, 
+    txnForm, 
+    assetForm, 
+    debtForm, 
+    plannerForm, 
+    confirmSheet, 
+    strategySheet, 
+    amortizationSheet
+  ].filter(Boolean);
+  
   let currentConfirmCallback = null;
 
   function openSheet(sheetElement) {
     if (!sheetElement || !overlay) return;
+    
+    // Hide all sheets first
     allSheets.forEach(s => s.classList.add('translate-y-full'));
+    
+    // Show requested sheet and overlay
     sheetElement.classList.remove('hidden');
     overlay.classList.remove('hidden');
+    
+    // Slight delay to allow CSS transitions to trigger smoothly
     setTimeout(() => {
       overlay.classList.remove('opacity-0');
       sheetElement.classList.remove('translate-y-full');
@@ -24,45 +46,69 @@ export function initUI() {
 
   function closeAll() {
     if (!overlay) return;
+    
     overlay.classList.add('opacity-0');
     allSheets.forEach(s => s.classList.add('translate-y-full'));
+    
     setTimeout(() => {
       overlay.classList.add('hidden');
       allSheets.forEach(s => s.classList.add('hidden'));
     }, 300);
   }
 
-  // Bind Add Menu Buttons Safely
+  // --- BIND ADD MENU BUTTONS ---
+  // Note: showPlannerFormBtn logic is securely handled inside planner.js directly
+  
   document.getElementById('showTxnFormBtn')?.addEventListener('click', () => {
-    document.dispatchEvent(new Event('resetTxnForm')); openSheet(txnForm);
+    document.dispatchEvent(new Event('resetTxnForm')); 
+    openSheet(txnForm);
   });
+  
   document.getElementById('showAssetFormBtn')?.addEventListener('click', () => {
-    document.dispatchEvent(new Event('resetAssetForm')); openSheet(assetForm);
+    document.dispatchEvent(new Event('resetAssetForm')); 
+    openSheet(assetForm);
   });
+  
   document.getElementById('showDebtFormBtn')?.addEventListener('click', () => {
-    document.dispatchEvent(new Event('resetDebtForm')); openSheet(debtForm);
+    document.dispatchEvent(new Event('resetDebtForm')); 
+    openSheet(debtForm);
   });
 
-  // Custom Confirm Dialog
+  // --- CUSTOM CONFIRM DIALOG ---
   function showConfirm(title, message, callback) {
     const t = document.getElementById('confirmTitle');
     const m = document.getElementById('confirmMessage');
+    
     if(t) t.innerText = title;
     if(m) m.innerText = message;
+    
     currentConfirmCallback = callback;
     openSheet(confirmSheet);
   }
 
+  // Confirm sheet action bindings
   document.getElementById('cancelConfirmBtn')?.addEventListener('click', closeAll);
   document.getElementById('executeConfirmBtn')?.addEventListener('click', () => {
     if (currentConfirmCallback) currentConfirmCallback();
     closeAll();
   });
 
+  // --- GLOBAL UI BINDINGS ---
   document.getElementById('fabBtn')?.addEventListener('click', () => openSheet(addMenu));
   document.querySelectorAll('.closeSheetBtn').forEach(btn => btn.addEventListener('click', closeAll));
   document.querySelectorAll('.backToMenuBtn').forEach(btn => btn.addEventListener('click', () => openSheet(addMenu)));
   overlay?.addEventListener('click', closeAll);
 
-  return { closeAll, openSheet, showConfirm, txnForm, assetForm, debtForm, strategySheet, amortizationSheet };
+  // Expose these elements and functions so your feature files can control them
+  return { 
+    closeAll, 
+    openSheet, 
+    showConfirm, 
+    txnForm, 
+    assetForm, 
+    debtForm, 
+    plannerForm,
+    strategySheet, 
+    amortizationSheet 
+  };
 }
