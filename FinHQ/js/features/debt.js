@@ -9,11 +9,8 @@ export function initDebt(ui) {
   const dataMap = new Map();
 
   document.addEventListener('resetDebtForm', () => {
-    currentEditId = null;
-    form.reset();
-    document.getElementById('debtDate').value = new Date().toISOString().split('T')[0];
+    currentEditId = null; form.reset();
     document.getElementById('deleteDebtBtn').classList.add('hidden');
-    document.getElementById('saveDebtBtn').innerText = 'Save Debt';
   });
 
   if (form) {
@@ -21,53 +18,45 @@ export function initDebt(ui) {
       e.preventDefault();
       const payload = {
         principal: Number(document.getElementById('debtPrincipal').value),
+        paid: Number(document.getElementById('debtPaid').value) || 0,
         name: document.getElementById('debtName').value,
         emi: Number(document.getElementById('debtEMI').value) || 0,
         date: new Date(document.getElementById('debtDate').value).toISOString(),
         timestamp: new Date(document.getElementById('debtDate').value).getTime()
       };
-
-      try {
-        if (currentEditId) {
-          await updateDoc(doc(db, "debts", currentEditId), payload);
-        } else {
-          await addDoc(collection(db, "debts"), payload);
-        }
-        ui.closeAll();
-      } catch (error) { console.error("Error saving debt:", error); }
+      
+      if (currentEditId) await updateDoc(doc(db, "debts", currentEditId), payload);
+      else await addDoc(collection(db, "debts"), payload);
+      ui.closeAll();
     });
 
-    document.getElementById('deleteDebtBtn')?.addEventListener('click', async () => {
-      if (currentEditId && confirm("Delete this debt permanently?")) {
+    document.getElementById('deleteDebtBtn')?.addEventListener('click', () => {
+      ui.showConfirm("Delete Loan?", "Are you sure?", async () => {
         await deleteDoc(doc(db, "debts", currentEditId));
-        ui.closeAll();
-      }
+      });
     });
   }
 
   if (list) {
     onSnapshot(query(collection(db, "debts"), orderBy("timestamp", "desc")), (snapshot) => {
-      list.innerHTML = '';
-      dataMap.clear();
-      let localTotal = 0;
-
-      if (snapshot.empty) list.innerHTML = '<p class="text-center text-forest-400 py-10 text-sm">No debts registered.</p>';
+      list.innerHTML = ''; dataMap.clear(); let localTotal = 0;
 
       snapshot.forEach((document) => {
         const debt = document.data();
-        const id = document.id;
-        dataMap.set(id, debt);
-        localTotal += debt.principal;
+        const outstanding = debt.principal - (debt.paid || 0); // FIX 4: Accurate Math
+        dataMap.set(document.id, debt);
+        localTotal += outstanding;
         
+        const progress = Math.min(100, ((debt.paid || 0) / debt.principal) * 100).toFixed(0);
+
         list.innerHTML += `
-          <div data-id="${id}" class="edit-card cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card border border-red-50 dark:border-gray-700 flex justify-between items-center active:scale-[0.98] transition-transform">
-            <div>
+          <div data-id="${document.id}" class="edit-card cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card border border-red-50 dark:border-gray-700 flex flex-col gap-2">
+            <div class="flex justify-between items-center">
               <p class="font-semibold text-forest-900 dark:text-white">${debt.name}</p>
-              ${debt.emi > 0 ? `<p class="text-[10px] text-forest-400 font-semibold bg-forest-50 dark:bg-gray-700 px-2 py-0.5 rounded mt-1 inline-block">₹${debt.emi.toLocaleString('en-IN')}/mo</p>` : ''}
+              <p class="font-display font-semibold text-xl text-red-600">₹${outstanding.toLocaleString('en-IN')}</p>
             </div>
-            <div class="text-right">
-              <p class="font-display font-semibold text-xl text-red-600">₹${debt.principal.toLocaleString('en-IN')}</p>
-            </div>
+            <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5"><div class="bg-green-500 h-1.5 rounded-full" style="width: ${progress}%"></div></div>
+            <p class="text-[10px] text-gray-400 text-right">${progress}% Paid Off</p>
           </div>
         `;
       });
@@ -82,13 +71,10 @@ export function initDebt(ui) {
       currentEditId = id;
 
       document.getElementById('debtPrincipal').value = debt.principal;
+      document.getElementById('debtPaid').value = debt.paid || 0;
       document.getElementById('debtName').value = debt.name;
-      document.getElementById('debtDate').value = debt.date.split('T')[0];
       document.getElementById('debtEMI').value = debt.emi;
-
       document.getElementById('deleteDebtBtn').classList.remove('hidden');
-      document.getElementById('saveDebtBtn').innerText = 'Update';
-      
       ui.openSheet(ui.debtForm);
     });
   }
