@@ -1,9 +1,8 @@
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { store } from './store.js';
 
-// Replace with your keys!
+// ⚠️ PASTE YOUR CONFIG HERE ⚠️
 const firebaseConfig = {
   apiKey: "AIzaSyB1fCtAmK2KqdIxHDuq9B4S99rjY0dVKGo",
   authDomain: "finhq-ac746.firebaseapp.com",
@@ -18,16 +17,26 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
-// Single coordinated load for all modules
+// Single coordinated load for the entire application
 export function initGlobalListeners() {
   const collections = ['transactions', 'assets', 'debts', 'budgets', 'goals', 'recurring'];
+  let loadedCount = 0;
+
   collections.forEach(col => {
     onSnapshot(query(collection(db, col), orderBy("timestamp", "desc")), (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       store.update(col, data);
-    }, (err) => console.error(`Error syncing ${col}:`, err));
+      
+      // Only reveal the UI once the initial data load is complete
+      if (!store.isLoaded) {
+        loadedCount++;
+        if (loadedCount === collections.length) store.setLoaded();
+      }
+    }, (err) => console.error(`Offline or Error syncing ${col}:`, err));
   });
 }
+
+export { collection, addDoc, doc, updateDoc, deleteDoc };
 
 
 
