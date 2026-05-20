@@ -5,9 +5,10 @@ export function initUI() {
   const assetForm = document.getElementById('assetFormSheet');
   const debtForm = document.getElementById('debtFormSheet');
   const confirmSheet = document.getElementById('confirmSheet'); 
+  const strategySheet = document.getElementById('strategySheet'); // NEW
+  const amortizationSheet = document.getElementById('amortizationSheet'); // NEW
   
-  // Filter out any nulls just in case the HTML is missing a piece
-  const allSheets = [addMenu, txnForm, assetForm, debtForm, confirmSheet].filter(Boolean);
+  const allSheets = [addMenu, txnForm, assetForm, debtForm, confirmSheet, strategySheet, amortizationSheet].filter(Boolean);
   let currentConfirmCallback = null;
 
   function openSheet(sheetElement) {
@@ -63,5 +64,5 @@ export function initUI() {
   document.querySelectorAll('.backToMenuBtn').forEach(btn => btn.addEventListener('click', () => openSheet(addMenu)));
   overlay?.addEventListener('click', closeAll);
 
-  return { closeAll, openSheet, showConfirm, txnForm, assetForm, debtForm };
+  return { closeAll, openSheet, showConfirm, txnForm, assetForm, debtForm, strategySheet, amortizationSheet };
 }
