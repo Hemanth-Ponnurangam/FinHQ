@@ -99,18 +99,32 @@ if (form) {
 
 
 // ==========================================
-// 5. LEDGER READ LOGIC (Live Real-time Feed)
+// 5. LEDGER READ LOGIC & DASHBOARD MATH
 // ==========================================
 const transactionList = document.getElementById('transactionList');
 
+// Currency Formatter Helper (Handles negative numbers gracefully: -₹500 instead of ₹-500)
+function formatCurrency(num) {
+  const isNegative = num < 0;
+  const formatted = Math.abs(num).toLocaleString('en-IN');
+  return isNegative ? `-₹${formatted}` : `₹${formatted}`;
+}
+
 if (transactionList) {
-  // Query our collection ordered by timestamps newest first
   const q = query(collection(db, "transactions"), orderBy("timestamp", "desc"));
   
-  // Open an active streaming snapshot listening directly for remote server-side edits
   onSnapshot(q, (snapshot) => {
-    transactionList.innerHTML = ''; // Wipe out existing DOM elements to prep clean sync
+    transactionList.innerHTML = ''; 
     
+    // 1. Math Tracking Variables
+    let totalIncome = 0;
+    let totalExpense = 0;
+    let currentMonthSpend = 0;
+    
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
     if (snapshot.empty) {
       transactionList.innerHTML = `
         <div class="text-center text-forest-400 py-12 px-4">
@@ -118,28 +132,35 @@ if (transactionList) {
           <p class="text-xs text-forest-300 mt-1">Tap the plus button below to append data.</p>
         </div>
       `;
-      return;
     }
 
-    // Iterate across active query instances retrieved from Cloud firestore
+    // 2. Loop through database and calculate
     snapshot.forEach((doc) => {
       const txn = doc.data();
-      
-      // Dynamic rendering styles mapping to expense structures
+      const amount = Number(txn.amount) || 0;
+      const txnDate = new Date(txn.date);
+
+      // Aggregation Logic
+      if (txn.type === 'income') {
+        totalIncome += amount;
+      } else if (txn.type === 'expense') {
+        totalExpense += amount;
+        // Check if the expense happened THIS month
+        if (txnDate.getMonth() === currentMonth && txnDate.getFullYear() === currentYear) {
+          currentMonthSpend += amount;
+        }
+      }
+
+      // Render the Ledger List Items (Your existing visual code)
       const isExpense = txn.type === 'expense';
       const amountClass = isExpense ? 'text-red-500' : 'text-forest-500';
       const sign = isExpense ? '-' : '+';
-      
-      // Parse dates cleanly localized to display profiles
-      const dateObj = new Date(txn.date);
-      const dateString = dateObj.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+      const dateString = txnDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
 
-      // Generate chip element layouts conditionally if target records feature attributes
       const tagHTML = txn.tags && txn.tags.length > 0 && txn.tags[0] !== "" 
         ? `<span class="bg-forest-50 text-forest-600 text-[10px] px-2 py-0.5 rounded uppercase tracking-wider font-semibold ml-2">${txn.tags[0]}</span>` 
         : '';
 
-      // Construct live markup tracking elements inside core layouts
       transactionList.innerHTML += `
         <div class="bg-white rounded-2xl p-4 shadow-card border border-forest-50/50 flex items-center justify-between transition-all active:scale-[0.99]">
           <div>
@@ -149,12 +170,24 @@ if (transactionList) {
             </div>
             <p class="text-xs text-forest-400 mt-1">${dateString} · <span class="capitalize">${txn.type}</span></p>
           </div>
-          <p class="font-display font-semibold text-xl ${amountClass} tracking-tight">${sign}₹${txn.amount.toLocaleString('en-IN')}</p>
+          <p class="font-display font-semibold text-xl ${amountClass} tracking-tight">${sign}₹${Math.abs(amount).toLocaleString('en-IN')}</p>
         </div>
       `;
     });
     
-    // Reparse document tracking layouts to load missing styling vector nodes
+    // 3. Update the Dashboard UI
+    const liquidCash = totalIncome - totalExpense;
+    // Note: Net Worth equals Liquid Cash for now until we build the Debt/Wealth modules
+    const netWorth = liquidCash; 
+
+    const netWorthEl = document.getElementById('netWorthDisplay');
+    const liquidCashEl = document.getElementById('liquidCashDisplay');
+    const monthSpendEl = document.getElementById('monthSpendDisplay');
+
+    if (netWorthEl) netWorthEl.innerText = formatCurrency(netWorth);
+    if (liquidCashEl) liquidCashEl.innerText = formatCurrency(liquidCash);
+    if (monthSpendEl) monthSpendEl.innerText = formatCurrency(currentMonthSpend);
+
     if (window.lucide) {
       lucide.createIcons();
     }
