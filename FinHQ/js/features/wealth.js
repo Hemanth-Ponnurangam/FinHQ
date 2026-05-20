@@ -1,5 +1,5 @@
 import { db, collection, addDoc, doc, updateDoc, deleteDoc } from '../firebase.js';
-import { onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { onSnapshot, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 export function initWealth(ui) {
   const form = document.getElementById('assetForm');
@@ -39,21 +39,29 @@ export function initWealth(ui) {
       } catch (error) { console.error("Error saving asset:", error); }
     });
 
-    document.getElementById('deleteAssetBtn')?.addEventListener('click', async () => {
-      if (currentEditId && confirm("Delete this asset permanently?")) {
+    // Upgraded Delete Logic using the new Custom Confirm UI
+    document.getElementById('deleteAssetBtn')?.addEventListener('click', () => {
+      ui.showConfirm("Delete Investment?", "This will remove the asset from your portfolio permanently.", async () => {
         await deleteDoc(doc(db, "assets", currentEditId));
         ui.closeAll();
-      }
+      });
     });
   }
 
   if (list) {
-    onSnapshot(query(collection(db, "assets"), orderBy("timestamp", "desc")), (snapshot) => {
+    // Pagination added here to save Firestore reads!
+    const q = query(collection(db, "assets"), orderBy("timestamp", "desc"), limit(100));
+    
+    onSnapshot(q, (snapshot) => {
       list.innerHTML = '';
       dataMap.clear();
       let globalPortfolioValue = 0;
 
-      if (snapshot.empty) list.innerHTML = '<p class="text-center text-forest-400 py-10 text-sm">No assets tracked.</p>';
+      if (snapshot.empty) {
+        list.innerHTML = '<p class="text-center text-forest-400 py-10 text-sm">No assets tracked.</p>';
+        if(totalDisplay) totalDisplay.innerText = '₹0';
+        return;
+      }
 
       snapshot.forEach((document) => {
         const asset = document.data();
@@ -75,11 +83,14 @@ export function initWealth(ui) {
             </div>
             <div class="text-right">
               <p class="font-display font-semibold text-xl dark:text-white">₹${currentValue.toLocaleString('en-IN')}</p>
-              <p class="text-[10px] font-semibold mt-0.5 ${isPositive ? 'text-green-500' : 'text-red-500'}">${isPositive ? '+' : ''}${plPercent}%</p>
+              <p class="text-[10px] font-semibold mt-0.5 ${isPositive ? 'text-green-500' : 'text-red-500'}">
+                ${isPositive ? '+' : ''}${plPercent}%
+              </p>
             </div>
           </div>
         `;
       });
+      
       if(totalDisplay) totalDisplay.innerText = `₹${globalPortfolioValue.toLocaleString('en-IN')}`;
     });
 
