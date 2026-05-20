@@ -1,5 +1,5 @@
 import { db, collection, addDoc, doc, updateDoc, deleteDoc } from '../firebase.js';
-import { onSnapshot, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 export function initWealth(ui) {
   const form = document.getElementById('assetForm');
@@ -8,7 +8,6 @@ export function initWealth(ui) {
   let currentEditId = null;
   const dataMap = new Map();
 
-  // 1. Safe Form Reset
   document.addEventListener('resetAssetForm', () => {
     try {
       currentEditId = null;
@@ -23,21 +22,33 @@ export function initWealth(ui) {
     }
   });
 
-  // 2. Safe Form Submit
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      // Ensure we have a valid date string even if the input is empty
+      const qty = Number(document.getElementById('assetQty')?.value || 0);
+      const buyPrice = Number(document.getElementById('assetBuyPrice')?.value || 0);
+      const currentPrice = Number(document.getElementById('assetCurrentPrice')?.value || 0);
+
+      // UX 13 FIX: Validate Asset Data
+      if (qty <= 0) {
+        alert("Quantity must be greater than 0.");
+        return;
+      }
+      if (buyPrice < 0 || currentPrice < 0) {
+        alert("Prices cannot be negative.");
+        return;
+      }
+
       const rawDate = document.getElementById('assetDate')?.value;
       const safeDate = rawDate ? new Date(rawDate) : new Date();
 
       const payload = {
         name: document.getElementById('assetName')?.value || 'Unnamed Asset',
         category: document.getElementById('assetCategory')?.value || 'Equity',
-        qty: Number(document.getElementById('assetQty')?.value) || 1,
-        buyPrice: Number(document.getElementById('assetBuyPrice')?.value) || 0,
-        currentPrice: Number(document.getElementById('assetCurrentPrice')?.value) || 0,
+        qty: qty,
+        buyPrice: buyPrice,
+        currentPrice: currentPrice,
         purchaseDate: safeDate.toISOString(),
         timestamp: safeDate.getTime()
       };
@@ -46,21 +57,15 @@ export function initWealth(ui) {
         const btn = document.getElementById('saveAssetBtn');
         if (btn) btn.innerText = 'Saving...';
 
-        if (currentEditId) {
-          await updateDoc(doc(db, "assets", currentEditId), payload);
-        } else {
-          await addDoc(collection(db, "assets"), payload);
-        }
+        if (currentEditId) await updateDoc(doc(db, "assets", currentEditId), payload);
+        else await addDoc(collection(db, "assets"), payload);
       } catch (error) { 
         console.error("Firebase Error saving asset:", error); 
-        alert("Failed to save to database. Check console.");
       } finally {
-        // ALWAYS close the sheet, even if it errors, so it doesn't "freeze"
         ui.closeAll();
       }
     });
 
-    // 3. Safe Delete
     document.getElementById('deleteAssetBtn')?.addEventListener('click', () => {
       ui.showConfirm("Delete Investment?", "This will remove the asset permanently.", async () => {
         try {
@@ -74,9 +79,8 @@ export function initWealth(ui) {
     });
   }
 
-  // 4. Safe List Rendering & Clicking
   if (list) {
-    const q = query(collection(db, "assets"), orderBy("timestamp", "desc"), limit(100));
+    const q = query(collection(db, "assets"), orderBy("timestamp", "desc"));
     
     onSnapshot(q, (snapshot) => {
       list.innerHTML = '';
@@ -94,7 +98,6 @@ export function initWealth(ui) {
         const id = docSnap.id;
         dataMap.set(id, asset);
         
-        // Handle legacy data missing the new fields
         const qty = asset.qty || 1;
         const currentPrice = asset.currentPrice !== undefined ? asset.currentPrice : (asset.currentValue || 0);
         const buyPrice = asset.buyPrice !== undefined ? asset.buyPrice : currentPrice;
@@ -108,7 +111,7 @@ export function initWealth(ui) {
         const isPositive = profitLoss >= 0;
 
         list.innerHTML += `
-          <div data-id="${id}" class="edit-card cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card border border-forest-50/50 dark:border-gray-700 flex justify-between items-center active:scale-[0.98]">
+          <div data-id="${id}" class="edit-card cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card border border-forest-50/50 dark:border-gray-700 flex justify-between items-center active:scale-[0.98] transition-transform">
             <div>
               <p class="font-semibold text-forest-900 dark:text-white">${asset.name || 'Unnamed'}</p>
               <p class="text-xs text-forest-400 mt-1 uppercase tracking-wider">${asset.category || 'Asset'} • Qty: ${qty}</p>
@@ -124,9 +127,8 @@ export function initWealth(ui) {
       });
       
       if(totalDisplay) totalDisplay.innerText = `₹${globalPortfolioValue.toLocaleString('en-IN')}`;
-    });
+    }, (err) => console.error("Wealth Sync Error:", err));
 
-    // Populate Form safely
     list.addEventListener('click', (e) => {
       try {
         const card = e.target.closest('.edit-card');
@@ -138,7 +140,6 @@ export function initWealth(ui) {
         
         currentEditId = id;
 
-        // Safely map old data to new inputs
         const elName = document.getElementById('assetName');
         const elCat = document.getElementById('assetCategory');
         const elDate = document.getElementById('assetDate');
@@ -149,7 +150,6 @@ export function initWealth(ui) {
         if(elName) elName.value = asset.name || '';
         if(elCat) elCat.value = asset.category || 'Fixed';
         
-        // Prevent string splitting crash if purchaseDate doesn't exist
         if(elDate) {
           elDate.value = asset.purchaseDate ? asset.purchaseDate.split('T')[0] : new Date().toISOString().split('T')[0];
         }
