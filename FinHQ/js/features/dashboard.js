@@ -55,5 +55,17 @@ export function initDashboard() {
     // Uses true outstanding amount for net worth!
     snapshot.forEach(doc => totalDebtValue += (doc.data().principal - (doc.data().paid || 0)));
     updateUI();
+
+    // 2. Assets (Investments)
+  onSnapshot(collection(db, "assets"), (snapshot) => {
+    totalAssetValue = 0;
+    snapshot.forEach(doc => {
+      const asset = doc.data();
+      // SAFE MATH: Fallback to 1 for qty, and check for old currentValue field
+      const safeQty = asset.qty || 1;
+      const safePrice = asset.currentPrice !== undefined ? asset.currentPrice : (asset.currentValue || 0);
+      totalAssetValue += (safeQty * safePrice);
+    }); 
+    updateUI();   
   });
 }
