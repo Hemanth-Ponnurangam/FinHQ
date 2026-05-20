@@ -6,52 +6,63 @@ export function initWealth(ui) {
   const list = document.getElementById('assetList');
   const totalDisplay = document.getElementById('totalWealthDisplay');
 
-  // WRITE
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const value = document.getElementById('assetValue').value;
       const name = document.getElementById('assetName').value;
       const category = document.getElementById('assetCategory').value;
-      const yieldRate = document.getElementById('assetYield').value;
+      const date = document.getElementById('assetDate').value;
+      const qty = Number(document.getElementById('assetQty').value) || 1;
+      const buyPrice = Number(document.getElementById('assetBuyPrice').value) || 0;
+      const currentPrice = Number(document.getElementById('assetCurrentPrice').value) || buyPrice;
 
       try {
         await addDoc(collection(db, "assets"), {
-          currentValue: Number(value), name: name, category: category,
-          yieldRate: Number(yieldRate) || 0, timestamp: Date.now()
+          name, category, qty, buyPrice, currentPrice,
+          purchaseDate: new Date(date).toISOString(),
+          timestamp: new Date(date).getTime()
         });
-        form.reset(); ui.closeAll();
+        form.reset(); 
+        document.getElementById('assetDate').value = new Date().toISOString().split('T')[0];
+        ui.closeAll();
       } catch (error) { console.error("Error saving asset:", error); }
     });
   }
 
-  // READ
   if (list) {
     onSnapshot(query(collection(db, "assets"), orderBy("timestamp", "desc")), (snapshot) => {
       list.innerHTML = '';
-      let localTotal = 0;
+      let globalPortfolioValue = 0;
 
-      if (snapshot.empty) list.innerHTML = '<p class="text-center text-forest-400 py-10 text-sm">No assets registered yet.</p>';
+      if (snapshot.empty) list.innerHTML = '<p class="text-center text-forest-400 py-10 text-sm">No assets tracked.</p>';
 
       snapshot.forEach((doc) => {
         const asset = doc.data();
-        localTotal += asset.currentValue;
+        const totalInvested = asset.qty * asset.buyPrice;
+        const currentValue = asset.qty * asset.currentPrice;
+        globalPortfolioValue += currentValue;
         
+        const profitLoss = currentValue - totalInvested;
+        const plPercent = totalInvested > 0 ? ((profitLoss / totalInvested) * 100).toFixed(1) : 0;
+        const isPositive = profitLoss >= 0;
+
         list.innerHTML += `
-          <div class="bg-white rounded-2xl p-4 shadow-card border border-forest-50/50 flex justify-between items-center">
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card border border-forest-50/50 dark:border-gray-700 flex justify-between items-center">
             <div>
-              <p class="font-semibold text-forest-900">${asset.name}</p>
-              <p class="text-xs text-forest-400 mt-1 uppercase tracking-wider">${asset.category}</p>
+              <p class="font-semibold text-forest-900 dark:text-white">${asset.name}</p>
+              <p class="text-xs text-forest-400 mt-1 uppercase tracking-wider">${asset.category} • Qty: ${asset.qty}</p>
             </div>
             <div class="text-right">
-              <p class="font-display font-semibold text-xl text-forest-900">₹${asset.currentValue.toLocaleString('en-IN')}</p>
-              ${asset.yieldRate > 0 ? `<p class="text-[10px] text-green-500 font-semibold mt-0.5">+${asset.yieldRate}% Yield</p>` : ''}
+              <p class="font-display font-semibold text-xl dark:text-white">₹${currentValue.toLocaleString('en-IN')}</p>
+              <p class="text-[10px] font-semibold mt-0.5 ${isPositive ? 'text-green-500' : 'text-red-500'}">
+                ${isPositive ? '+' : ''}${plPercent}% (₹${Math.abs(profitLoss).toLocaleString('en-IN')})
+              </p>
             </div>
           </div>
         `;
       });
       
-      if(totalDisplay) totalDisplay.innerText = `₹${localTotal.toLocaleString('en-IN')}`;
+      if(totalDisplay) totalDisplay.innerText = `₹${globalPortfolioValue.toLocaleString('en-IN')}`;
     });
   }
 }
