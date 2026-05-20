@@ -1,7 +1,7 @@
-// Import modern, modular Firebase directly
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { store } from './store.js';
 
 // Replace with your keys!
 const firebaseConfig = {
@@ -16,7 +16,20 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+export const db = getFirestore(app);
 
-// Export the new tools!
-export { db, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc };
+// Single coordinated load for all modules
+export function initGlobalListeners() {
+  const collections = ['transactions', 'assets', 'debts', 'budgets', 'goals', 'recurring'];
+  collections.forEach(col => {
+    onSnapshot(query(collection(db, col), orderBy("timestamp", "desc")), (snap) => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      store.update(col, data);
+    }, (err) => console.error(`Error syncing ${col}:`, err));
+  });
+}
+
+
+
+
+
