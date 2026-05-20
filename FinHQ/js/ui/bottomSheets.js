@@ -3,8 +3,9 @@ export function initUI() {
   const addMenu = document.getElementById('addMenuSheet');
   const txnForm = document.getElementById('txnFormSheet');
   const assetForm = document.getElementById('assetFormSheet');
+  const debtForm = document.getElementById('debtFormSheet'); // <-- ADD THIS
   
-  const allSheets = [addMenu, txnForm, assetForm];
+  const allSheets = [addMenu, txnForm, assetForm, debtForm];
 
   function openSheet(sheetElement) {
     allSheets.forEach(s => s.classList.add('translate-y-full'));
@@ -25,10 +26,10 @@ export function initUI() {
     }, 300);
   }
 
-  // Bindings
   document.getElementById('fabBtn')?.addEventListener('click', () => openSheet(addMenu));
   document.getElementById('showTxnFormBtn')?.addEventListener('click', () => openSheet(txnForm));
   document.getElementById('showAssetFormBtn')?.addEventListener('click', () => openSheet(assetForm));
+  document.getElementById('showDebtFormBtn')?.addEventListener('click', () => openSheet(debtForm)); // <-- ADD THIS
   
   document.querySelectorAll('.closeSheetBtn').forEach(btn => btn.addEventListener('click', closeAll));
   document.querySelectorAll('.backToMenuBtn').forEach(btn => btn.addEventListener('click', () => openSheet(addMenu)));
