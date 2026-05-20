@@ -11,6 +11,10 @@
   </script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body class="bg-cream dark:bg-gray-900 text-forest-900 dark:text-gray-100 antialiased transition-colors duration-300">
@@ -57,64 +61,57 @@
             <button id="openWealthBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-forest-50 dark:hover:bg-gray-700 transition-colors text-left w-full"><div class="w-10 h-10 rounded-full bg-orange-50 dark:bg-gray-700 flex items-center justify-center text-gold"><i data-lucide="trending-up" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Wealth</p><p id="wealthSummary" class="text-xs text-forest-400 mt-0.5 hidden md:block">Syncing...</p></div></button>
             <button id="openDebtBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors text-left w-full"><div class="w-10 h-10 rounded-full bg-red-50 dark:bg-gray-700 flex items-center justify-center text-red-500"><i data-lucide="landmark" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Debt</p><p id="debtSummary" class="text-xs text-forest-400 mt-0.5 hidden md:block">Syncing...</p></div></button>
             <button id="openAnalyticsBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors text-left w-full"><div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-gray-700 flex items-center justify-center text-blue-500"><i data-lucide="pie-chart" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Analytics</p><p class="text-xs text-forest-400 mt-0.5 hidden md:block">Insights</p></div></button>
-            
             <button id="openPlannerBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-teal-50 dark:hover:bg-gray-700 transition-colors text-left w-full"><div class="w-10 h-10 rounded-full bg-teal-50 dark:bg-gray-700 flex items-center justify-center text-teal-500"><i data-lucide="target" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Planner</p><p class="text-xs text-forest-400 mt-0.5 hidden md:block">Budgets & Goals</p></div></button>
-            <button id="openSipBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors text-left w-full"><div class="w-10 h-10 rounded-full bg-purple-50 dark:bg-gray-700 flex items-center justify-center text-purple-500"><i data-lucide="repeat" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Automator</p><p class="text-xs text-forest-400 mt-0.5 hidden md:block">SIPs & Subs</p></div></button>
-            <button id="openExportBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left w-full"><div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300"><i data-lucide="download-cloud" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Export</p><p class="text-xs text-forest-400 mt-0.5 hidden md:block">CSV & Data</p></div></button>
+            <button id="openSipBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors text-left w-full"><div class="w-10 h-10 rounded-full bg-purple-50 dark:bg-gray-700 flex items-center justify-center text-purple-500"><i data-lucide="repeat" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Automator</p><p id="sipSummary" class="text-xs text-forest-400 mt-0.5 hidden md:block">Syncing...</p></div></button>
+            <button id="openExportBtn" class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-start gap-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left w-full"><div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300"><i data-lucide="download-cloud" class="w-5 h-5"></i></div><div><p class="font-semibold dark:text-white">Export</p><p class="text-xs text-forest-400 mt-0.5 hidden md:block">Reports</p></div></button>
           </div>
         </section>
       </div> 
 
-      <div id="ledgerView" class="hidden space-y-4"><div class="flex justify-between items-center pt-2"><div class="flex items-center gap-4"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Ledger</h2></div><button id="exportCsvBtn" class="p-2 bg-forest-50 dark:bg-gray-800 text-forest-500 rounded-full shadow-card hover:bg-forest-100 hidden"><i data-lucide="download" class="w-5 h-5"></i></button></div><div class="flex gap-2 mb-4"><input type="text" id="ledgerSearch" placeholder="Search..." class="flex-1 p-3 rounded-xl bg-white dark:bg-gray-800 dark:text-white shadow-card border-none outline-none"><select id="ledgerMonthFilter" class="p-3 rounded-xl bg-white dark:bg-gray-800 dark:text-white shadow-card border-none outline-none max-w-[140px] text-sm"><option value="all">All Time</option></select></div><div id="transactionList" class="space-y-3 pb-24 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0"></div></div>
-      <div id="wealthView" class="hidden space-y-6"><div class="flex items-center gap-4 pt-2"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Portfolio</h2></div><div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-card"><p class="text-xs text-forest-400 font-semibold tracking-widest uppercase mb-1">Total Assets</p><p id="totalWealthDisplay" class="font-display text-4xl font-semibold dark:text-white">₹0</p></div><div id="assetList" class="space-y-3 pb-24 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0"></div></div>
-      <div id="debtView" class="hidden space-y-6"><div class="flex justify-between items-center pt-2"><div class="flex items-center gap-4"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Debt</h2></div><button id="openStrategyBtn" class="px-3 py-2 bg-red-50 dark:bg-gray-800 text-red-500 text-xs font-semibold rounded-xl shadow-card hover:bg-red-100 flex items-center gap-2"><i data-lucide="trending-down" class="w-4 h-4"></i> Strategy</button></div><div class="bg-red-50 dark:bg-gray-800 rounded-2xl p-6 shadow-card border border-red-100 dark:border-gray-700"><p class="text-xs text-red-400 font-semibold tracking-widest uppercase mb-1">Total Outstanding</p><p id="totalDebtDisplay" class="font-display text-4xl font-semibold text-red-600">₹0</p></div><div id="debtList" class="space-y-3 pb-24 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0"></div></div>
+      <div id="ledgerView" class="hidden"></div><div id="wealthView" class="hidden"></div><div id="debtView" class="hidden"></div><div id="analyticsView" class="hidden"></div><div id="plannerView" class="hidden"></div>
 
-      <div id="analyticsView" class="hidden space-y-6">
+      <div id="sipView" class="hidden space-y-6">
         <div class="flex items-center justify-between pt-2">
-          <div class="flex items-center gap-4"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Analytics</h2></div>
-          <select id="analyticsTimeFilter" class="p-2 rounded-xl bg-white dark:bg-gray-800 dark:text-white shadow-card outline-none text-sm"><option value="thisMonth">This Month</option><option value="last3Months">Last 3 Months</option><option value="thisYear">This Year</option><option value="allTime" selected>All Time</option></select>
+          <div class="flex items-center gap-4"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Automator</h2></div>
+          <button id="addSipBtn" class="p-2 bg-purple-50 dark:bg-gray-800 text-purple-600 rounded-full shadow-card hover:bg-purple-100 transition-colors"><i data-lucide="plus" class="w-5 h-5"></i></button>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card"><p class="text-[10px] text-forest-400 font-semibold tracking-widest uppercase mb-1">MoM Spend</p><p id="momSpendChange" class="font-semibold text-lg dark:text-white">--</p></div>
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card"><p class="text-[10px] text-forest-400 font-semibold tracking-widest uppercase mb-1">Top Expenses</p><p id="topCategoriesText" class="text-xs font-semibold dark:text-gray-300 leading-tight">--</p></div>
+        <div class="bg-purple-50 dark:bg-gray-800 rounded-2xl p-6 shadow-card border border-purple-100 dark:border-gray-700">
+          <p class="text-xs text-purple-400 font-semibold tracking-widest uppercase mb-1">Monthly Committed Outflow</p>
+          <p id="totalSipDisplay" class="font-display text-4xl font-semibold text-purple-700 dark:text-purple-400">₹0</p>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card relative">
-          <h3 class="text-sm font-semibold dark:text-white mb-4">Net Worth History</h3>
-          <div id="nwEmpty" class="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-800/90 z-10 hidden rounded-2xl"><i data-lucide="trending-up" class="w-8 h-8 text-gray-300 mb-2"></i><p class="text-xs text-gray-400">Not enough data</p></div>
-          <canvas id="nwHistoryChart" class="w-full h-48"></canvas>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-24">
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card relative"><h3 class="text-sm font-semibold dark:text-white mb-4">Cashflow Trend</h3><div id="cashflowEmpty" class="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-800/90 z-10 hidden rounded-2xl"><i data-lucide="bar-chart-2" class="w-8 h-8 text-gray-300 mb-2"></i></div><canvas id="cashflowLineChart" class="w-full h-48"></canvas></div>
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card relative"><h3 class="text-sm font-semibold dark:text-white mb-4">Asset Allocation</h3><div id="assetEmpty" class="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-800/90 z-10 hidden rounded-2xl"><i data-lucide="trending-up" class="w-8 h-8 text-gray-300 mb-2"></i></div><canvas id="assetDonutChart" class="w-full h-48"></canvas></div>
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card relative"><h3 class="text-sm font-semibold dark:text-white mb-4">Income Sources</h3><div id="incomeEmpty" class="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-800/90 z-10 hidden rounded-2xl"><i data-lucide="pie-chart" class="w-8 h-8 text-gray-300 mb-2"></i></div><canvas id="incomePieChart" class="w-full h-48"></canvas></div>
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card relative"><h3 class="text-sm font-semibold dark:text-white mb-4">Expense Breakdown</h3><div id="expenseEmpty" class="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-gray-800/90 z-10 hidden rounded-2xl"><i data-lucide="pie-chart" class="w-8 h-8 text-gray-300 mb-2"></i></div><canvas id="expensePieChart" class="w-full h-48"></canvas></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-24" id="sipList">
+          <p class="text-center text-forest-400 py-10 text-sm col-span-full">No automated payments set.</p>
         </div>
       </div>
 
-      <div id="plannerView" class="hidden space-y-6">
-        <div class="flex items-center justify-between pt-2">
-          <div class="flex items-center gap-4"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Planner</h2></div>
-          <button id="addPlannerItemBtn" class="p-2 bg-teal-50 dark:bg-gray-800 text-teal-600 rounded-full shadow-card"><i data-lucide="plus" class="w-5 h-5"></i></button>
+      <div id="exportView" class="hidden space-y-6">
+        <div class="flex items-center gap-4 pt-2">
+          <button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+          <h2 class="font-display text-3xl font-semibold dark:text-white">Export Centre</h2>
         </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-24">
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700">
-            <h3 class="text-sm font-semibold text-forest-900 dark:text-white mb-4 flex items-center gap-2"><i data-lucide="pie-chart" class="w-4 h-4 text-teal-500"></i> Monthly Budgets</h3>
-            <div id="budgetList" class="space-y-4"><p class="text-xs text-gray-400 text-center py-4">No budgets set.</p></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-24">
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col justify-between h-48">
+            <div>
+              <div class="w-12 h-12 rounded-full bg-green-50 dark:bg-gray-700 flex items-center justify-center text-green-600 mb-4"><i data-lucide="sheet" class="w-6 h-6"></i></div>
+              <h3 class="font-semibold dark:text-white">Raw Data (CSV)</h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Download your entire ledger for Excel or Google Sheets.</p>
+            </div>
+            <button id="exportCsvFullBtn" class="w-full py-3 bg-gray-100 dark:bg-gray-700 text-forest-900 dark:text-white rounded-xl font-semibold hover:bg-gray-200 transition-colors">Download CSV</button>
           </div>
-          
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700">
-            <h3 class="text-sm font-semibold text-forest-900 dark:text-white mb-4 flex items-center gap-2"><i data-lucide="target" class="w-4 h-4 text-purple-500"></i> Savings Targets</h3>
-            <div id="goalList" class="space-y-4"><p class="text-xs text-gray-400 text-center py-4">No goals set.</p></div>
+
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col justify-between h-48">
+            <div>
+              <div class="w-12 h-12 rounded-full bg-red-50 dark:bg-gray-700 flex items-center justify-center text-red-500 mb-4"><i data-lucide="file-text" class="w-6 h-6"></i></div>
+              <h3 class="font-semibold dark:text-white">Monthly Summary (PDF)</h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Generate a clean, printable report of this month's finances.</p>
+            </div>
+            <button id="exportPdfBtn" class="w-full py-3 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600 transition-colors">Generate PDF</button>
           </div>
         </div>
       </div>
-
-      <div id="sipView" class="hidden space-y-6"><div class="flex items-center gap-4 pt-2"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Automator</h2></div><p class="text-center py-10 dark:text-gray-400">SIP & Recurring Engine coming in Spell 2.</p></div>
-      <div id="exportView" class="hidden space-y-6"><div class="flex items-center gap-4 pt-2"><button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="font-display text-3xl font-semibold dark:text-white">Export Centre</h2></div><p class="text-center py-10 dark:text-gray-400">PDF & CSV Engine coming in Spell 2.</p></div>
 
     </main>
   </div> 
@@ -128,37 +125,36 @@
       <button id="showAssetFormBtn" class="bg-orange-50 dark:bg-gray-700 rounded-xl p-3 flex flex-col items-center gap-2 dark:text-white text-sm font-semibold hover:bg-orange-100 transition-colors"><i data-lucide="trending-up" class="w-6 h-6 text-gold"></i> Asset</button>
       <button id="showDebtFormBtn" class="bg-red-50 dark:bg-gray-700 rounded-xl p-3 flex flex-col items-center gap-2 dark:text-white text-sm font-semibold hover:bg-red-100 transition-colors"><i data-lucide="landmark" class="w-6 h-6 text-red-500"></i> Debt</button>
       <button id="showPlannerFormBtn" class="bg-teal-50 dark:bg-gray-700 rounded-xl p-3 flex flex-col items-center gap-2 dark:text-white text-sm font-semibold hover:bg-teal-100 transition-colors"><i data-lucide="target" class="w-6 h-6 text-teal-500"></i> Plan</button>
+      <button id="showSipFormBtn" class="bg-purple-50 dark:bg-gray-700 rounded-xl p-3 flex flex-col items-center gap-2 dark:text-white text-sm font-semibold hover:bg-purple-100 transition-colors"><i data-lucide="repeat" class="w-6 h-6 text-purple-500"></i> Auto</button>
     </div>
   </div>
 
-  <div id="plannerFormSheet" class="fixed inset-x-0 bottom-0 w-full max-w-md md:max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-t-3xl p-6 z-50 transform translate-y-full transition-transform max-h-[90vh] overflow-y-auto hidden">
-    <div class="flex justify-between items-center mb-6"><button class="backToMenuBtn text-forest-400"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h3 class="font-display text-xl font-semibold dark:text-white">New Plan</h3><button class="closeSheetBtn text-forest-400 bg-forest-50 dark:bg-gray-700 p-2 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+  <div id="sipFormSheet" class="fixed inset-x-0 bottom-0 w-full max-w-md md:max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-t-3xl p-6 z-50 transform translate-y-full transition-transform max-h-[90vh] overflow-y-auto hidden">
+    <div class="flex justify-between items-center mb-6"><button class="backToMenuBtn text-forest-400"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h3 class="font-display text-xl font-semibold dark:text-white">Recurring Payment</h3><button class="closeSheetBtn text-forest-400 bg-forest-50 dark:bg-gray-700 p-2 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button></div>
     
-    <div class="flex p-1 bg-gray-100 dark:bg-gray-700 rounded-xl mb-6">
-      <button type="button" id="tabBudget" class="flex-1 py-2 text-sm font-semibold rounded-lg bg-white dark:bg-gray-600 shadow-sm transition-all dark:text-white">Category Budget</button>
-      <button type="button" id="tabGoal" class="flex-1 py-2 text-sm font-semibold text-gray-500 dark:text-gray-400 rounded-lg transition-all">Savings Goal</button>
-    </div>
-
-    <form id="budgetForm" class="space-y-4">
-      <div><label class="text-[10px] text-forest-400 uppercase font-semibold">Monthly Limit</label><input type="number" id="budgetLimit" required class="w-full font-display text-4xl font-semibold dark:text-white border-b-2 border-forest-100 dark:border-gray-700 pb-2 focus:outline-none bg-transparent" placeholder="₹0"></div>
-      <div><label class="text-[10px] text-forest-400 uppercase font-semibold">Track Category</label>
-        <select id="budgetCategory" class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none mt-1">
-          <option value="Food & Dining">Food & Dining</option><option value="Shopping">Shopping</option><option value="Transport">Transport</option><option value="Groceries">Groceries</option><option value="Utilities">Utilities</option>
-        </select>
+    <form id="sipForm" class="space-y-4">
+      <div><label class="text-[10px] text-forest-400 uppercase font-semibold">Monthly Amount</label><input type="number" id="sipAmount" required class="w-full font-display text-4xl font-semibold text-purple-500 border-b-2 border-forest-100 dark:border-gray-700 pb-2 focus:outline-none bg-transparent" placeholder="₹0"></div>
+      <div><input type="text" id="sipName" required class="w-full text-lg dark:text-white border-b-2 border-forest-100 dark:border-gray-700 pb-2 focus:outline-none bg-transparent" placeholder="Name (e.g. Netflix, Nifty50 SIP)"></div>
+      
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="text-[10px] text-forest-400 uppercase font-semibold">Type</label>
+          <select id="sipType" class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none mt-1">
+            <option value="Expense">Expense / Bill</option>
+            <option value="Investment">Investment (SIP)</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-[10px] text-forest-400 uppercase font-semibold">Billing Date</label>
+          <input type="number" id="sipDate" min="1" max="28" required class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none mt-1" placeholder="Day (1-28)">
+        </div>
       </div>
-      <div class="flex gap-3 mt-4"><button type="button" id="deleteBudgetBtn" class="hidden w-1/3 py-4 bg-red-100 text-red-600 rounded-2xl font-semibold">Delete</button><button type="submit" id="saveBudgetBtn" class="flex-1 py-4 bg-teal-500 text-white rounded-2xl font-semibold">Set Budget</button></div>
-    </form>
-
-    <form id="goalForm" class="space-y-4 hidden">
-      <div><label class="text-[10px] text-forest-400 uppercase font-semibold">Target Amount</label><input type="number" id="goalTarget" required class="w-full font-display text-4xl font-semibold dark:text-white border-b-2 border-forest-100 dark:border-gray-700 pb-2 focus:outline-none bg-transparent" placeholder="₹0"></div>
-      <div><label class="text-[10px] text-forest-400 uppercase font-semibold">Current Saved</label><input type="number" id="goalSaved" class="w-full font-display text-2xl font-semibold text-purple-500 border-b-2 border-forest-100 dark:border-gray-700 pb-2 focus:outline-none bg-transparent" placeholder="₹0"></div>
-      <div><input type="text" id="goalName" required class="w-full text-lg dark:text-white border-b-2 border-forest-100 dark:border-gray-700 pb-2 focus:outline-none bg-transparent" placeholder="e.g. Ooty Trip 2026"></div>
-      <div><label class="text-[10px] text-forest-400 uppercase font-semibold">Target Date</label><input type="month" id="goalDate" class="w-full p-3 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none mt-1"></div>
-      <div class="flex gap-3 mt-4"><button type="button" id="deleteGoalBtn" class="hidden w-1/3 py-4 bg-red-100 text-red-600 rounded-2xl font-semibold">Delete</button><button type="submit" id="saveGoalBtn" class="flex-1 py-4 bg-purple-500 text-white rounded-2xl font-semibold">Save Goal</button></div>
+      
+      <div class="flex gap-3 mt-4"><button type="button" id="deleteSipBtn" class="hidden w-1/3 py-4 bg-red-100 text-red-600 rounded-2xl font-semibold">Delete</button><button type="submit" id="saveSipBtn" class="flex-1 py-4 bg-purple-600 text-white rounded-2xl font-semibold">Save Template</button></div>
     </form>
   </div>
 
-  <div id="txnFormSheet" class="hidden"></div><div id="assetFormSheet" class="hidden"></div><div id="debtFormSheet" class="hidden"></div><div id="strategySheet" class="hidden"></div><div id="amortizationSheet" class="hidden"></div><div id="confirmSheet" class="hidden"></div>
+  <div id="txnFormSheet" class="hidden"></div><div id="assetFormSheet" class="hidden"></div><div id="debtFormSheet" class="hidden"></div><div id="plannerFormSheet" class="hidden"></div><div id="strategySheet" class="hidden"></div><div id="amortizationSheet" class="hidden"></div><div id="confirmSheet" class="hidden"></div>
 
   <script type="module" src="js/app.js"></script>
   <script>
