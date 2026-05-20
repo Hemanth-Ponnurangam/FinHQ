@@ -3,10 +3,11 @@ export function initUI() {
   const addMenu = document.getElementById('addMenuSheet');
   const txnForm = document.getElementById('txnFormSheet');
   const assetForm = document.getElementById('assetFormSheet');
-  const debtForm = document.getElementById('debtFormSheet'); // <-- ADD THIS
+  const debtForm = document.getElementById('debtFormSheet');
   
   const allSheets = [addMenu, txnForm, assetForm, debtForm];
 
+  // Make openSheet public
   function openSheet(sheetElement) {
     allSheets.forEach(s => s.classList.add('translate-y-full'));
     sheetElement.classList.remove('hidden');
@@ -27,13 +28,22 @@ export function initUI() {
   }
 
   document.getElementById('fabBtn')?.addEventListener('click', () => openSheet(addMenu));
-  document.getElementById('showTxnFormBtn')?.addEventListener('click', () => openSheet(txnForm));
-  document.getElementById('showAssetFormBtn')?.addEventListener('click', () => openSheet(assetForm));
-  document.getElementById('showDebtFormBtn')?.addEventListener('click', () => openSheet(debtForm)); // <-- ADD THIS
+  
+  // Custom Triggers: When opening an "Add" sheet, broadcast an event to reset the form data
+  document.getElementById('showTxnFormBtn')?.addEventListener('click', () => {
+    document.dispatchEvent(new Event('resetTxnForm')); openSheet(txnForm);
+  });
+  document.getElementById('showAssetFormBtn')?.addEventListener('click', () => {
+    document.dispatchEvent(new Event('resetAssetForm')); openSheet(assetForm);
+  });
+  document.getElementById('showDebtFormBtn')?.addEventListener('click', () => {
+    document.dispatchEvent(new Event('resetDebtForm')); openSheet(debtForm);
+  });
   
   document.querySelectorAll('.closeSheetBtn').forEach(btn => btn.addEventListener('click', closeAll));
   document.querySelectorAll('.backToMenuBtn').forEach(btn => btn.addEventListener('click', () => openSheet(addMenu)));
   overlay?.addEventListener('click', closeAll);
 
-  return { closeAll };
+  // Return the specific forms so feature files can command them to open
+  return { closeAll, openSheet, txnForm, assetForm, debtForm };
 }
