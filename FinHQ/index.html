@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>FinHQ — Hub</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { forest: { 900: '#0D3B2A', 800: '#164D38', 500: '#3D9162', 400: '#52B788', 50: '#F0F7F4' }, cream: '#FAFCF8', gold: '#C8963E' }, fontFamily: { display: ['"Cormorant Garamond"', 'serif'], body: ['"DM Sans"', 'sans-serif'] }, boxShadow: { card: '0 4px 12px -4px rgba(13,59,42,0.1), 0 0 0 1px rgba(13,59,42,0.02)' } } }
+    }
+  </script>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="bg-cream text-forest-900 antialiased selection:bg-forest-400">
+
+  <div class="max-w-md mx-auto min-h-screen bg-cream flex flex-col relative pb-10 shadow-2xl">
+    
+    <header class="px-6 pt-8 pb-4">
+      <div class="font-display text-3xl font-semibold tracking-tight text-center">Fin<span class="text-gold">HQ</span></div>
+    </header>
+
+    <main class="flex-1 px-5 space-y-8">
+      
+      <div id="hubView" class="space-y-8">
+        <section class="space-y-3">
+          <div class="bg-forest-900 text-white rounded-3xl p-6 shadow-card relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-forest-800 rounded-full -mr-10 -mt-10 opacity-50"></div>
+            <p class="text-xs text-forest-400 font-semibold tracking-widest uppercase mb-1 relative z-10">Total Net Worth</p>
+            <p id="netWorthDisplay" class="font-display text-4xl font-semibold relative z-10">₹0</p>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-white rounded-2xl p-5 shadow-card border border-forest-50/50">
+              <p class="text-[10px] text-forest-400 font-semibold tracking-widest uppercase mb-1">Liquid Cash</p>
+              <p id="liquidCashDisplay" class="font-display text-2xl font-semibold text-forest-900">₹0</p>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-card border border-forest-50/50">
+              <p class="text-[10px] text-forest-400 font-semibold tracking-widest uppercase mb-1">Month Spend</p>
+              <p id="monthSpendDisplay" class="font-display text-2xl font-semibold text-red-500">₹0</p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-forest-500 tracking-widest uppercase mb-4 px-1">Modules</h2>
+          <div class="grid grid-cols-2 gap-3">
+            
+            <button id="openLedgerBtn" class="bg-white rounded-2xl p-5 shadow-card border border-forest-50/50 flex flex-col items-start gap-4 hover:bg-forest-50 transition-colors text-left active:scale-95 duration-200 w-full">
+              <div class="w-10 h-10 rounded-full bg-forest-50 flex items-center justify-center text-forest-500"><i data-lucide="book-text" class="w-5 h-5"></i></div>
+              <div><p class="font-semibold text-forest-900">Ledger</p><p class="text-xs text-forest-400 mt-0.5">Daily cashflow</p></div>
+            </button>
+
+            <button id="openWealthBtn" class="bg-white rounded-2xl p-5 shadow-card border border-forest-50/50 flex flex-col items-start gap-4 hover:bg-forest-50 transition-colors text-left active:scale-95 duration-200 w-full">
+              <div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-gold"><i data-lucide="trending-up" class="w-5 h-5"></i></div>
+              <div><p class="font-semibold text-forest-900">Wealth</p><p class="text-xs text-forest-400 mt-0.5">Assets & FDs</p></div>
+            </button>
+            
+            <button class="bg-white rounded-2xl p-5 shadow-card border border-forest-50/50 flex flex-col items-start gap-4 opacity-50 cursor-not-allowed text-left w-full"><div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500"><i data-lucide="landmark" class="w-5 h-5"></i></div><div><p class="font-semibold text-forest-900">Debt</p><p class="text-xs text-forest-400 mt-0.5">Loans & EMI</p></div></button>
+            <button class="bg-white rounded-2xl p-5 shadow-card border border-forest-50/50 flex flex-col items-start gap-4 opacity-50 cursor-not-allowed text-left w-full"><div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500"><i data-lucide="pie-chart" class="w-5 h-5"></i></div><div><p class="font-semibold text-forest-900">Insights</p><p class="text-xs text-forest-400 mt-0.5">CSV & Data</p></div></button>
+
+          </div>
+        </section>
+      </div> 
+
+      <div id="ledgerView" class="hidden space-y-6">
+        <div class="flex items-center gap-4 pt-2">
+          <button class="backToHubBtn p-2 bg-white rounded-full shadow-card text-forest-900 hover:bg-forest-50 active:scale-95 transition-all"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+          <h2 class="font-display text-3xl font-semibold text-forest-900">Ledger</h2>
+        </div>
+        <div id="transactionList" class="space-y-3 pb-24"></div>
+      </div>
+
+      <div id="wealthView" class="hidden space-y-6">
+        <div class="flex items-center gap-4 pt-2">
+          <button class="backToHubBtn p-2 bg-white rounded-full shadow-card text-forest-900 hover:bg-forest-50 active:scale-95 transition-all"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+          <h2 class="font-display text-3xl font-semibold text-forest-900">Wealth</h2>
+        </div>
+        
+        <div class="bg-white rounded-2xl p-6 shadow-card border border-forest-50/50 mb-6">
+          <p class="text-xs text-forest-400 font-semibold tracking-widest uppercase mb-1">Total Assets</p>
+          <p id="totalWealthDisplay" class="font-display text-4xl font-semibold text-forest-900">₹0</p>
+        </div>
+
+        <div id="assetList" class="space-y-3 pb-24"></div>
+      </div>
+
+    </main>
+
+    <button id="fabBtn" class="fixed bottom-6 right-6 lg:right-[calc(50%-13rem)] w-14 h-14 bg-forest-900 text-gold rounded-full shadow-lg flex items-center justify-center hover:bg-forest-800 active:scale-95 transition-all z-40">
+      <i data-lucide="plus" class="w-6 h-6"></i>
+    </button>
+  </div> 
+
+  <div id="bottomSheetOverlay" class="fixed inset-0 bg-forest-950/40 backdrop-blur-sm z-40 hidden opacity-0 transition-opacity"></div>
+  
+  <div id="addMenuSheet" class="fixed inset-x-0 bottom-0 max-w-md mx-auto bg-white rounded-t-3xl shadow-[0_-20px_40px_rgba(13,59,42,0.1)] p-6 z-50 transform translate-y-full transition-transform duration-300">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="font-display text-2xl font-semibold text-forest-900">Add New...</h3>
+      <button class="closeSheetBtn text-forest-400 bg-forest-50 p-2 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <button id="showTxnFormBtn" class="bg-forest-50 rounded-xl p-4 flex flex-col items-center gap-2 text-forest-900 font-semibold hover:bg-forest-100"><i data-lucide="book-text" class="w-6 h-6 text-forest-500"></i> Transaction</button>
+      <button id="showAssetFormBtn" class="bg-orange-50 rounded-xl p-4 flex flex-col items-center gap-2 text-forest-900 font-semibold hover:bg-orange-100"><i data-lucide="trending-up" class="w-6 h-6 text-gold"></i> Asset</button>
+    </div>
+  </div>
+
+  <div id="txnFormSheet" class="fixed inset-x-0 bottom-0 max-w-md mx-auto bg-white rounded-t-3xl shadow-[0_-20px_40px_rgba(13,59,42,0.1)] p-6 z-50 transform translate-y-full transition-transform duration-300 max-h-[90vh] overflow-y-auto hidden">
+    <div class="flex justify-between items-center mb-6">
+      <button class="backToMenuBtn text-forest-400 hover:text-forest-900"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+      <h3 class="font-display text-xl font-semibold text-forest-900">New Transaction</h3>
+      <button class="closeSheetBtn text-forest-400 bg-forest-50 p-2 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <form id="ledgerForm" class="space-y-5">
+      <div><input type="number" id="txnAmount" required class="w-full font-display text-4xl font-semibold text-forest-900 border-b-2 border-forest-100 pb-2 focus:outline-none focus:border-forest-500 bg-transparent placeholder-forest-200" placeholder="₹0"></div>
+      <div><input type="text" id="txnTitle" required class="w-full text-lg text-forest-900 border-b-2 border-forest-100 pb-2 focus:outline-none focus:border-forest-500 bg-transparent placeholder-forest-200" placeholder="What was it for?"></div>
+      <div class="grid grid-cols-2 gap-4">
+        <select id="txnType" class="w-full p-3 rounded-xl bg-forest-50 text-forest-900 outline-none border border-transparent"><option value="expense">Expense</option><option value="income">Income</option></select>
+        <input type="text" id="txnTag" class="w-full p-3 rounded-xl bg-forest-50 text-forest-900 outline-none border border-transparent placeholder-forest-300" placeholder="#Tag">
+      </div>
+      <button type="submit" class="w-full py-4 bg-forest-900 text-white rounded-2xl font-semibold mt-4 flex items-center justify-center gap-2 hover:bg-forest-800">Save</button>
+    </form>
+  </div>
+
+  <div id="assetFormSheet" class="fixed inset-x-0 bottom-0 max-w-md mx-auto bg-white rounded-t-3xl shadow-[0_-20px_40px_rgba(13,59,42,0.1)] p-6 z-50 transform translate-y-full transition-transform duration-300 max-h-[90vh] overflow-y-auto hidden">
+    <div class="flex justify-between items-center mb-6">
+      <button class="backToMenuBtn text-forest-400 hover:text-forest-900"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+      <h3 class="font-display text-xl font-semibold text-forest-900">New Asset</h3>
+      <button class="closeSheetBtn text-forest-400 bg-forest-50 p-2 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <form id="assetForm" class="space-y-5">
+      <div><input type="number" id="assetValue" required class="w-full font-display text-4xl font-semibold text-forest-900 border-b-2 border-forest-100 pb-2 focus:outline-none focus:border-forest-500 bg-transparent placeholder-forest-200" placeholder="₹0"></div>
+      <div><input type="text" id="assetName" required class="w-full text-lg text-forest-900 border-b-2 border-forest-100 pb-2 focus:outline-none focus:border-forest-500 bg-transparent placeholder-forest-200" placeholder="e.g. HDFC Fixed Deposit"></div>
+      <div class="grid grid-cols-2 gap-4">
+        <select id="assetCategory" class="w-full p-3 rounded-xl bg-forest-50 text-forest-900 outline-none border border-transparent">
+          <option value="fixed">Fixed Income</option>
+          <option value="equity">Equity (Stocks)</option>
+          <option value="realestate">Real Estate</option>
+        </select>
+        <input type="number" id="assetYield" step="0.1" class="w-full p-3 rounded-xl bg-forest-50 text-forest-900 outline-none border border-transparent placeholder-forest-300" placeholder="Expected Yield %">
+      </div>
+      <button type="submit" class="w-full py-4 bg-orange-500 text-white rounded-2xl font-semibold mt-4 flex items-center justify-center gap-2 hover:bg-orange-600">Save Asset</button>
+    </form>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => lucide.createIcons());</script>
+</body>
+</html>
