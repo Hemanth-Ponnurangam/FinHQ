@@ -8,42 +8,73 @@ export function initWealth(ui) {
   let currentEditId = null;
   const dataMap = new Map();
 
+  // 1. Safe Form Reset
   document.addEventListener('resetAssetForm', () => {
-    currentEditId = null;
-    form?.reset();
-    const dateInput = document.getElementById('assetDate');
-    if(dateInput) dateInput.value = new Date().toISOString().split('T')[0];
-    document.getElementById('deleteAssetBtn')?.classList.add('hidden');
-    const saveBtn = document.getElementById('saveAssetBtn');
-    if(saveBtn) saveBtn.innerText = 'Save Asset';
+    try {
+      currentEditId = null;
+      if (form) form.reset();
+      const dateInput = document.getElementById('assetDate');
+      if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+      document.getElementById('deleteAssetBtn')?.classList.add('hidden');
+      const saveBtn = document.getElementById('saveAssetBtn');
+      if (saveBtn) saveBtn.innerText = 'Save Asset';
+    } catch (err) {
+      console.error("Error resetting asset form:", err);
+    }
   });
 
+  // 2. Safe Form Submit
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      
+      // Ensure we have a valid date string even if the input is empty
+      const rawDate = document.getElementById('assetDate')?.value;
+      const safeDate = rawDate ? new Date(rawDate) : new Date();
+
       const payload = {
         name: document.getElementById('assetName')?.value || 'Unnamed Asset',
         category: document.getElementById('assetCategory')?.value || 'Equity',
-        qty: Number(document.getElementById('assetQty')?.value || 1),
-        buyPrice: Number(document.getElementById('assetBuyPrice')?.value || 0),
-        currentPrice: Number(document.getElementById('assetCurrentPrice')?.value || 0),
-        purchaseDate: new Date(document.getElementById('assetDate')?.value || new Date()).toISOString(),
-        timestamp: new Date(document.getElementById('assetDate')?.value || new Date()).getTime()
+        qty: Number(document.getElementById('assetQty')?.value) || 1,
+        buyPrice: Number(document.getElementById('assetBuyPrice')?.value) || 0,
+        currentPrice: Number(document.getElementById('assetCurrentPrice')?.value) || 0,
+        purchaseDate: safeDate.toISOString(),
+        timestamp: safeDate.getTime()
       };
 
-      if (currentEditId) await updateDoc(doc(db, "assets", currentEditId), payload);
-      else await addDoc(collection(db, "assets"), payload);
-      ui.closeAll();
+      try {
+        const btn = document.getElementById('saveAssetBtn');
+        if (btn) btn.innerText = 'Saving...';
+
+        if (currentEditId) {
+          await updateDoc(doc(db, "assets", currentEditId), payload);
+        } else {
+          await addDoc(collection(db, "assets"), payload);
+        }
+      } catch (error) { 
+        console.error("Firebase Error saving asset:", error); 
+        alert("Failed to save to database. Check console.");
+      } finally {
+        // ALWAYS close the sheet, even if it errors, so it doesn't "freeze"
+        ui.closeAll();
+      }
     });
 
+    // 3. Safe Delete
     document.getElementById('deleteAssetBtn')?.addEventListener('click', () => {
-      ui.showConfirm("Delete Investment?", "This will remove the asset from your portfolio permanently.", async () => {
-        await deleteDoc(doc(db, "assets", currentEditId));
-        ui.closeAll();
+      ui.showConfirm("Delete Investment?", "This will remove the asset permanently.", async () => {
+        try {
+          await deleteDoc(doc(db, "assets", currentEditId));
+        } catch (err) {
+          console.error("Error deleting:", err);
+        } finally {
+          ui.closeAll();
+        }
       });
     });
   }
 
+  // 4. Safe List Rendering & Clicking
   if (list) {
     const q = query(collection(db, "assets"), orderBy("timestamp", "desc"), limit(100));
     
@@ -63,7 +94,7 @@ export function initWealth(ui) {
         const id = docSnap.id;
         dataMap.set(id, asset);
         
-        // SAFE FALLBACKS FOR OLDER DATA
+        // Handle legacy data missing the new fields
         const qty = asset.qty || 1;
         const currentPrice = asset.currentPrice !== undefined ? asset.currentPrice : (asset.currentValue || 0);
         const buyPrice = asset.buyPrice !== undefined ? asset.buyPrice : currentPrice;
@@ -77,7 +108,7 @@ export function initWealth(ui) {
         const isPositive = profitLoss >= 0;
 
         list.innerHTML += `
-          <div data-id="${id}" class="edit-card cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card border border-forest-50/50 dark:border-gray-700 flex justify-between items-center active:scale-[0.98] transition-transform">
+          <div data-id="${id}" class="edit-card cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card border border-forest-50/50 dark:border-gray-700 flex justify-between items-center active:scale-[0.98]">
             <div>
               <p class="font-semibold text-forest-900 dark:text-white">${asset.name || 'Unnamed'}</p>
               <p class="text-xs text-forest-400 mt-1 uppercase tracking-wider">${asset.category || 'Asset'} • Qty: ${qty}</p>
@@ -95,43 +126,48 @@ export function initWealth(ui) {
       if(totalDisplay) totalDisplay.innerText = `₹${globalPortfolioValue.toLocaleString('en-IN')}`;
     });
 
+    // Populate Form safely
     list.addEventListener('click', (e) => {
-      const card = e.target.closest('.edit-card');
-      if (!card) return;
-      const id = card.dataset.id;
-      const asset = dataMap.get(id);
-      if (!asset) return; 
-      
-      currentEditId = id;
+      try {
+        const card = e.target.closest('.edit-card');
+        if (!card) return;
+        
+        const id = card.dataset.id;
+        const asset = dataMap.get(id);
+        if (!asset) return; 
+        
+        currentEditId = id;
 
-      // SAFE FORM POPULATION FOR OLDER DATA
-      const elName = document.getElementById('assetName');
-      const elCat = document.getElementById('assetCategory');
-      const elDate = document.getElementById('assetDate');
-      const elQty = document.getElementById('assetQty');
-      const elBuy = document.getElementById('assetBuyPrice');
-      const elCur = document.getElementById('assetCurrentPrice');
+        // Safely map old data to new inputs
+        const elName = document.getElementById('assetName');
+        const elCat = document.getElementById('assetCategory');
+        const elDate = document.getElementById('assetDate');
+        const elQty = document.getElementById('assetQty');
+        const elBuy = document.getElementById('assetBuyPrice');
+        const elCur = document.getElementById('assetCurrentPrice');
 
-      if(elName) elName.value = asset.name || '';
-      if(elCat) elCat.value = asset.category || 'Fixed';
-      
-      // If the old asset lacks a date, default to today instead of crashing
-      if(elDate) {
-        elDate.value = asset.purchaseDate ? asset.purchaseDate.split('T')[0] : new Date().toISOString().split('T')[0];
+        if(elName) elName.value = asset.name || '';
+        if(elCat) elCat.value = asset.category || 'Fixed';
+        
+        // Prevent string splitting crash if purchaseDate doesn't exist
+        if(elDate) {
+          elDate.value = asset.purchaseDate ? asset.purchaseDate.split('T')[0] : new Date().toISOString().split('T')[0];
+        }
+
+        if(elQty) elQty.value = asset.qty || 1;
+
+        const oldVal = asset.currentValue || 0;
+        if(elBuy) elBuy.value = asset.buyPrice !== undefined ? asset.buyPrice : oldVal;
+        if(elCur) elCur.value = asset.currentPrice !== undefined ? asset.currentPrice : oldVal;
+
+        document.getElementById('deleteAssetBtn')?.classList.remove('hidden');
+        const saveBtn = document.getElementById('saveAssetBtn');
+        if(saveBtn) saveBtn.innerText = 'Update';
+        
+        ui.openSheet(ui.assetForm);
+      } catch (err) {
+        console.error("Error opening edit card:", err);
       }
-
-      if(elQty) elQty.value = asset.qty || 1;
-
-      // Map the old 'currentValue' to the new fields if needed
-      const oldVal = asset.currentValue || 0;
-      if(elBuy) elBuy.value = asset.buyPrice !== undefined ? asset.buyPrice : oldVal;
-      if(elCur) elCur.value = asset.currentPrice !== undefined ? asset.currentPrice : oldVal;
-
-      document.getElementById('deleteAssetBtn')?.classList.remove('hidden');
-      const saveBtn = document.getElementById('saveAssetBtn');
-      if(saveBtn) saveBtn.innerText = 'Update';
-      
-      ui.openSheet(ui.assetForm);
     });
   }
 }
