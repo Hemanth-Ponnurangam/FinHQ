@@ -1,0 +1,20 @@
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D1ECE0;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #99D6B4;
+}
+
+/* Ensure icons scale properly */
+.lucide {
+  stroke-width: 2;
+}
