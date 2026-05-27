@@ -3,26 +3,25 @@ export function initUI() {
   const addMenu = document.getElementById('addMenuSheet');
   
   // All active data entry forms
-  const txnForm    = document.getElementById('txnFormSheet');
-  const assetForm  = document.getElementById('assetFormSheet');
-  const debtForm   = document.getElementById('debtFormSheet');
-  const sipForm    = document.getElementById('sipFormSheet');
-  const fuelForm   = document.getElementById('fuelFormSheet');
+  const txnForm     = document.getElementById('txnFormSheet');
+  const assetForm   = document.getElementById('assetFormSheet');
+  const debtForm    = document.getElementById('debtFormSheet');
+  const sipForm     = document.getElementById('sipFormSheet');
+  const fuelForm    = document.getElementById('fuelFormSheet');
   const serviceForm = document.getElementById('serviceFormSheet');
 
   // Utility and advanced tool sheets
-  const confirmSheet       = document.getElementById('confirmSheet');
-  const strategySheet      = document.getElementById('strategySheet');
-  const amortizationSheet  = document.getElementById('amortizationSheet');
+  const confirmSheet        = document.getElementById('confirmSheet');
+  const strategySheet       = document.getElementById('strategySheet');
+  const amortizationSheet   = document.getElementById('amortizationSheet');
   const cumulatedAmortSheet = document.getElementById('cumulatedAmortSheet');
+  
+  // Event sheets
+  const eventCreateSheet    = document.getElementById('eventCreateSheet');
+  const eventQuickAddSheet  = document.getElementById('eventQuickAddSheet');
+  const txnReceiptSheet     = document.getElementById('txnReceiptSheet');
 
-  // FIX 2: Event sheets were missing — closeAll() couldn't dismiss them,
-  // and openSheet() didn't push them off-screen before opening another sheet.
-  // Adding them here makes the whole system consistent.
-  const eventCreateSheet   = document.getElementById('eventCreateSheet');
-  const eventQuickAddSheet = document.getElementById('eventQuickAddSheet');
-
-  // Register ALL sheets here so closeAll() and openSheet() work for every sheet.
+  // Register ALL sheets here so closeAll() and openSheet() work for every sheet
   const allSheets = [
     addMenu,
     txnForm,
@@ -35,50 +34,80 @@ export function initUI() {
     cumulatedAmortSheet,
     fuelForm,
     serviceForm,
-    eventCreateSheet,   // FIX 2
-    eventQuickAddSheet, // FIX 2
+    eventCreateSheet,
+    eventQuickAddSheet,
+    txnReceiptSheet,
   ].filter(Boolean);
 
   let currentConfirmCallback = null;
+  let closeTimeout = null;
 
   function openSheet(sheetElement) {
     if (!sheetElement || !overlay) return;
 
-    // Slide all sheets off-screen first (including newly added event sheets)
-    allSheets.forEach(s => s.classList.add('translate-y-full'));
+    // 1. Cancel any pending close operations
+    if (closeTimeout) clearTimeout(closeTimeout);
 
-    // Show requested sheet and overlay
+    // 2. Hide and push down all other sheets to prevent overlap
+    allSheets.forEach(s => {
+      if (s !== sheetElement) {
+        s.classList.add('translate-y-full');
+        s.classList.remove('translate-y-0');
+        s.style.transform = 'translateY(100%)'; // Explicit fallback
+        s.classList.add('hidden');
+      }
+    });
+
+    // 3. Prepare target sheet and overlay
     sheetElement.classList.remove('hidden');
     overlay.classList.remove('hidden');
 
-    // Slight delay to allow CSS transitions to trigger smoothly
+    // Reset starting position explicitly
+    sheetElement.classList.add('translate-y-full');
+    sheetElement.classList.remove('translate-y-0');
+    sheetElement.style.transform = 'translateY(100%)';
+
+    // 4. Force reflow
+    void sheetElement.offsetWidth;
+    void overlay.offsetWidth;
+
+    // 5. Use a 50ms delay to bypass Tailwind CDN generation lag and force the transition
     setTimeout(() => {
       overlay.classList.remove('opacity-0');
+      
       sheetElement.classList.remove('translate-y-full');
+      sheetElement.classList.add('translate-y-0');
+      sheetElement.style.transform = 'translateY(0)'; // Forces the animation
+      
       sheetElement.scrollTop = 0;
-    }, 10);
+    }, 50);
   }
 
   function closeAll() {
     if (!overlay) return;
 
+    // Fade out overlay and slide sheets down
     overlay.classList.add('opacity-0');
-    allSheets.forEach(s => s.classList.add('translate-y-full'));
+    
+    allSheets.forEach(s => {
+      s.classList.remove('translate-y-0');
+      s.classList.add('translate-y-full');
+      s.style.transform = 'translateY(100%)';
+    });
 
-    setTimeout(() => {
+    if (closeTimeout) clearTimeout(closeTimeout);
+
+    // Wait for the 300ms transition to finish before hiding elements
+    closeTimeout = setTimeout(() => {
       overlay.classList.add('hidden');
       allSheets.forEach(s => s.classList.add('hidden'));
 
-      // FIX 3: Dispatch sheetClosed so modules (e.g. commute.js) can re-enable
-      // UI controls that were disabled while a sheet was open.
-      // Previously this event was never fired, causing the fuel/service log-type
-      // toggle to stay permanently disabled after the first edit.
+      // Dispatch event to re-enable underlying UI components
       document.dispatchEvent(new Event('sheetClosed'));
     }, 300);
   }
 
   // --- BIND ADD MENU BUTTONS ---
-
   document.getElementById('showTxnFormBtn')?.addEventListener('click', () => {
     document.dispatchEvent(new Event('resetTxnForm'));
     openSheet(txnForm);
@@ -124,7 +153,11 @@ export function initUI() {
   document.getElementById('fabBtn')?.addEventListener('click', () => openSheet(addMenu));
   document.querySelectorAll('.closeSheetBtn').forEach(btn => btn.addEventListener('click', closeAll));
   document.querySelectorAll('.backToMenuBtn').forEach(btn => btn.addEventListener('click', () => openSheet(addMenu)));
-  overlay?.addEventListener('click', closeAll);
+  
+  // Prevent ghost clicks from bubbling
+  overlay?.addEventListener('click', (e) => {
+    if (e.target === overlay) closeAll();
+  });
 
   return {
     closeAll,
@@ -139,7 +172,8 @@ export function initUI() {
     cumulatedAmortSheet,
     fuelForm,
     serviceForm,
-    eventCreateSheet,   // expose for events.js
-    eventQuickAddSheet, // expose for events.js
+    eventCreateSheet,
+    eventQuickAddSheet,
+    txnReceiptSheet,
   };
 }
