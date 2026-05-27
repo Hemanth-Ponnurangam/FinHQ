@@ -15,27 +15,40 @@ export function initUI() {
   const strategySheet       = document.getElementById('strategySheet');
   const amortizationSheet   = document.getElementById('amortizationSheet');
   const cumulatedAmortSheet = document.getElementById('cumulatedAmortSheet');
+  
+  // Event sheets
   const eventCreateSheet    = document.getElementById('eventCreateSheet');
   const eventQuickAddSheet  = document.getElementById('eventQuickAddSheet');
   const txnReceiptSheet     = document.getElementById('txnReceiptSheet');
 
-  // Register ALL sheets
+  // Register ALL sheets here so closeAll() and openSheet() work for every sheet
   const allSheets = [
-    addMenu, txnForm, assetForm, debtForm, sipForm, confirmSheet,
-    strategySheet, amortizationSheet, cumulatedAmortSheet, fuelForm,
-    serviceForm, eventCreateSheet, eventQuickAddSheet, txnReceiptSheet,
+    addMenu,
+    txnForm,
+    assetForm,
+    debtForm,
+    sipForm,
+    confirmSheet,
+    strategySheet,
+    amortizationSheet,
+    cumulatedAmortSheet,
+    fuelForm,
+    serviceForm,
+    eventCreateSheet,
+    eventQuickAddSheet,
+    txnReceiptSheet,
   ].filter(Boolean);
 
   let currentConfirmCallback = null;
-  let closeTimeout = null; // Track timeout to prevent race conditions
+  let closeTimeout = null;
 
   function openSheet(sheetElement) {
     if (!sheetElement || !overlay) return;
 
-    // 1. Cancel any pending close operations that might hide this new sheet
+    // 1. Cancel any pending close operations that might hide this new sheet mid-animation
     if (closeTimeout) clearTimeout(closeTimeout);
 
-    // 2. Slide all sheets off-screen first
+    // 2. Slide all sheets off-screen first (including newly added event sheets)
     allSheets.forEach(s => s.classList.add('translate-y-full'));
 
     // 3. Un-hide the requested sheet and overlay (sets display: block)
@@ -43,10 +56,11 @@ export function initUI() {
     overlay.classList.remove('hidden');
 
     // 4. Force a synchronous DOM reflow. 
-    // This tells the browser: "Calculate the exact dimensions of this sheet right now before moving to the next line of code."
+    // This absolutely guarantees the browser calculates dimensions and paints the elements before animating
     void sheetElement.offsetWidth;
+    void overlay.offsetWidth;
 
-    // 5. Safely trigger the animations in the next available frame
+    // 5. Trigger the animation safely in the next frame
     requestAnimationFrame(() => {
       overlay.classList.remove('opacity-0');
       sheetElement.classList.remove('translate-y-full');
@@ -74,6 +88,7 @@ export function initUI() {
   }
 
   // --- BIND ADD MENU BUTTONS ---
+
   document.getElementById('showTxnFormBtn')?.addEventListener('click', () => {
     document.dispatchEvent(new Event('resetTxnForm'));
     openSheet(txnForm);
