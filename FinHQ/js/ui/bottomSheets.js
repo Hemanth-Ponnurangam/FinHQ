@@ -3,84 +3,77 @@ export function initUI() {
   const addMenu = document.getElementById('addMenuSheet');
   
   // All active data entry forms
-  const txnForm    = document.getElementById('txnFormSheet');
-  const assetForm  = document.getElementById('assetFormSheet');
-  const debtForm   = document.getElementById('debtFormSheet');
-  const sipForm    = document.getElementById('sipFormSheet');
-  const fuelForm   = document.getElementById('fuelFormSheet');
+  const txnForm     = document.getElementById('txnFormSheet');
+  const assetForm   = document.getElementById('assetFormSheet');
+  const debtForm    = document.getElementById('debtFormSheet');
+  const sipForm     = document.getElementById('sipFormSheet');
+  const fuelForm    = document.getElementById('fuelFormSheet');
   const serviceForm = document.getElementById('serviceFormSheet');
 
   // Utility and advanced tool sheets
-  const confirmSheet       = document.getElementById('confirmSheet');
-  const strategySheet      = document.getElementById('strategySheet');
-  const amortizationSheet  = document.getElementById('amortizationSheet');
+  const confirmSheet        = document.getElementById('confirmSheet');
+  const strategySheet       = document.getElementById('strategySheet');
+  const amortizationSheet   = document.getElementById('amortizationSheet');
   const cumulatedAmortSheet = document.getElementById('cumulatedAmortSheet');
+  const eventCreateSheet    = document.getElementById('eventCreateSheet');
+  const eventQuickAddSheet  = document.getElementById('eventQuickAddSheet');
+  const txnReceiptSheet     = document.getElementById('txnReceiptSheet');
 
-  // FIX 2: Event sheets were missing — closeAll() couldn't dismiss them,
-  // and openSheet() didn't push them off-screen before opening another sheet.
-  // Adding them here makes the whole system consistent.
-  const eventCreateSheet   = document.getElementById('eventCreateSheet');
-  const eventQuickAddSheet = document.getElementById('eventQuickAddSheet');
-  const txnReceiptSheet    = document.getElementById('txnReceiptSheet');
-
-  // Register ALL sheets here so closeAll() and openSheet() work for every sheet.
+  // Register ALL sheets
   const allSheets = [
-    addMenu,
-    txnForm,
-    assetForm,
-    debtForm,
-    sipForm,
-    confirmSheet,
-    strategySheet,
-    amortizationSheet,
-    cumulatedAmortSheet,
-    fuelForm,
-    serviceForm,
-    eventCreateSheet,
-    eventQuickAddSheet,
-    txnReceiptSheet,
+    addMenu, txnForm, assetForm, debtForm, sipForm, confirmSheet,
+    strategySheet, amortizationSheet, cumulatedAmortSheet, fuelForm,
+    serviceForm, eventCreateSheet, eventQuickAddSheet, txnReceiptSheet,
   ].filter(Boolean);
 
   let currentConfirmCallback = null;
+  let closeTimeout = null; // Track timeout to prevent race conditions
 
   function openSheet(sheetElement) {
     if (!sheetElement || !overlay) return;
 
-    // Slide all sheets off-screen first (including newly added event sheets)
+    // 1. Cancel any pending close operations that might hide this new sheet
+    if (closeTimeout) clearTimeout(closeTimeout);
+
+    // 2. Slide all sheets off-screen first
     allSheets.forEach(s => s.classList.add('translate-y-full'));
 
-    // Show requested sheet and overlay
+    // 3. Un-hide the requested sheet and overlay (sets display: block)
     sheetElement.classList.remove('hidden');
     overlay.classList.remove('hidden');
 
-    // Slight delay to allow CSS transitions to trigger smoothly
-    setTimeout(() => {
+    // 4. Force a synchronous DOM reflow. 
+    // This tells the browser: "Calculate the exact dimensions of this sheet right now before moving to the next line of code."
+    void sheetElement.offsetWidth;
+
+    // 5. Safely trigger the animations in the next available frame
+    requestAnimationFrame(() => {
       overlay.classList.remove('opacity-0');
       sheetElement.classList.remove('translate-y-full');
       sheetElement.scrollTop = 0;
-    }, 10);
+    });
   }
 
   function closeAll() {
     if (!overlay) return;
 
+    // Fade out overlay and slide sheets down
     overlay.classList.add('opacity-0');
     allSheets.forEach(s => s.classList.add('translate-y-full'));
 
-    setTimeout(() => {
+    if (closeTimeout) clearTimeout(closeTimeout);
+
+    // Wait for the CSS transition (300ms) to finish before applying display: none
+    closeTimeout = setTimeout(() => {
       overlay.classList.add('hidden');
       allSheets.forEach(s => s.classList.add('hidden'));
 
-      // FIX 3: Dispatch sheetClosed so modules (e.g. commute.js) can re-enable
-      // UI controls that were disabled while a sheet was open.
-      // Previously this event was never fired, causing the fuel/service log-type
-      // toggle to stay permanently disabled after the first edit.
+      // Dispatch so modules can re-enable form toggles, etc.
       document.dispatchEvent(new Event('sheetClosed'));
     }, 300);
   }
 
   // --- BIND ADD MENU BUTTONS ---
-
   document.getElementById('showTxnFormBtn')?.addEventListener('click', () => {
     document.dispatchEvent(new Event('resetTxnForm'));
     openSheet(txnForm);
