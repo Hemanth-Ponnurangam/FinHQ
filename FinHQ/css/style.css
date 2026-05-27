@@ -1,0 +1,51 @@
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D1ECE0;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #99D6B4;
+}
+
+/* Ensure icons scale properly */
+.lucide {
+  stroke-width: 2;
+}
+/* ── EMI Slider track styling ───────────────────────────────── */
+.emi-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 9999px;
+  outline: none;
+}
+.emi-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #14b8a6;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  transition: transform 0.1s;
+}
+.emi-slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
+.emi-slider::-moz-range-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #14b8a6;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+}
+.dark .emi-slider { background: #374151; }
