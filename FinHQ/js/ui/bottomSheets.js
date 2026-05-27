@@ -21,22 +21,11 @@ export function initUI() {
   const eventQuickAddSheet  = document.getElementById('eventQuickAddSheet');
   const txnReceiptSheet     = document.getElementById('txnReceiptSheet');
 
-  // Register ALL sheets here so closeAll() and openSheet() work for every sheet
+  // Register ALL sheets here
   const allSheets = [
-    addMenu,
-    txnForm,
-    assetForm,
-    debtForm,
-    sipForm,
-    confirmSheet,
-    strategySheet,
-    amortizationSheet,
-    cumulatedAmortSheet,
-    fuelForm,
-    serviceForm,
-    eventCreateSheet,
-    eventQuickAddSheet,
-    txnReceiptSheet,
+    addMenu, txnForm, assetForm, debtForm, sipForm, confirmSheet,
+    strategySheet, amortizationSheet, cumulatedAmortSheet, fuelForm,
+    serviceForm, eventCreateSheet, eventQuickAddSheet, txnReceiptSheet,
   ].filter(Boolean);
 
   let currentConfirmCallback = null;
@@ -45,16 +34,13 @@ export function initUI() {
   function openSheet(sheetElement) {
     if (!sheetElement || !overlay) return;
 
-    // 1. Cancel any pending close operations
+    // 1. Cancel pending close operations
     if (closeTimeout) clearTimeout(closeTimeout);
 
-    // 2. Hide and push down all other sheets to prevent overlap
+    // 2. Hide all other sheets to prevent overlap
     allSheets.forEach(s => {
       if (s !== sheetElement) {
-        s.classList.add('translate-y-full');
-        s.classList.remove('translate-y-0');
-        s.style.transform = 'translateY(100%)'; // Explicit fallback
-        s.classList.add('hidden');
+        s.classList.add('translate-y-full', 'hidden');
       }
     });
 
@@ -64,45 +50,30 @@ export function initUI() {
 
     // Reset starting position explicitly
     sheetElement.classList.add('translate-y-full');
-    sheetElement.classList.remove('translate-y-0');
-    sheetElement.style.transform = 'translateY(100%)';
 
-    // 4. Force reflow
+    // 4. Force rigorous DOM reflow
     void sheetElement.offsetWidth;
     void overlay.offsetWidth;
 
-    // 5. Use a 50ms delay to bypass Tailwind CDN generation lag and force the transition
-    setTimeout(() => {
+    // 5. Trigger the animation cleanly in the next frame
+    requestAnimationFrame(() => {
       overlay.classList.remove('opacity-0');
-      
       sheetElement.classList.remove('translate-y-full');
-      sheetElement.classList.add('translate-y-0');
-      sheetElement.style.transform = 'translateY(0)'; // Forces the animation
-      
       sheetElement.scrollTop = 0;
-    }, 50);
+    });
   }
 
   function closeAll() {
     if (!overlay) return;
 
-    // Fade out overlay and slide sheets down
     overlay.classList.add('opacity-0');
-    
-    allSheets.forEach(s => {
-      s.classList.remove('translate-y-0');
-      s.classList.add('translate-y-full');
-      s.style.transform = 'translateY(100%)';
-    });
+    allSheets.forEach(s => s.classList.add('translate-y-full'));
 
     if (closeTimeout) clearTimeout(closeTimeout);
 
-    // Wait for the 300ms transition to finish before hiding elements
     closeTimeout = setTimeout(() => {
       overlay.classList.add('hidden');
       allSheets.forEach(s => s.classList.add('hidden'));
-
-      // Dispatch event to re-enable underlying UI components
       document.dispatchEvent(new Event('sheetClosed'));
     }, 300);
   }
@@ -154,7 +125,6 @@ export function initUI() {
   document.querySelectorAll('.closeSheetBtn').forEach(btn => btn.addEventListener('click', closeAll));
   document.querySelectorAll('.backToMenuBtn').forEach(btn => btn.addEventListener('click', () => openSheet(addMenu)));
   
-  // Prevent ghost clicks from bubbling
   overlay?.addEventListener('click', (e) => {
     if (e.target === overlay) closeAll();
   });
