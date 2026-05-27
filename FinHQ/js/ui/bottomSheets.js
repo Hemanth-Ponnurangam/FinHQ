@@ -45,27 +45,42 @@ export function initUI() {
   function openSheet(sheetElement) {
     if (!sheetElement || !overlay) return;
 
-    // 1. Cancel any pending close operations that might hide this new sheet mid-animation
+    // 1. Cancel any pending close operations
     if (closeTimeout) clearTimeout(closeTimeout);
 
-    // 2. Slide all sheets off-screen first (including newly added event sheets)
-    allSheets.forEach(s => s.classList.add('translate-y-full'));
+    // 2. Hide and push down all other sheets to prevent overlap
+    allSheets.forEach(s => {
+      if (s !== sheetElement) {
+        s.classList.add('translate-y-full');
+        s.classList.remove('translate-y-0');
+        s.style.transform = 'translateY(100%)'; // Explicit fallback
+        s.classList.add('hidden');
+      }
+    });
 
-    // 3. Un-hide the requested sheet and overlay (sets display: block)
+    // 3. Prepare target sheet and overlay
     sheetElement.classList.remove('hidden');
     overlay.classList.remove('hidden');
 
-    // 4. Force a synchronous DOM reflow. 
-    // This absolutely guarantees the browser calculates dimensions and paints the elements before animating
+    // Reset starting position explicitly
+    sheetElement.classList.add('translate-y-full');
+    sheetElement.classList.remove('translate-y-0');
+    sheetElement.style.transform = 'translateY(100%)';
+
+    // 4. Force reflow
     void sheetElement.offsetWidth;
     void overlay.offsetWidth;
 
-    // 5. Trigger the animation safely in the next frame
-    requestAnimationFrame(() => {
+    // 5. Use a 50ms delay to bypass Tailwind CDN generation lag and force the transition
+    setTimeout(() => {
       overlay.classList.remove('opacity-0');
+      
       sheetElement.classList.remove('translate-y-full');
+      sheetElement.classList.add('translate-y-0');
+      sheetElement.style.transform = 'translateY(0)'; // Forces the animation
+      
       sheetElement.scrollTop = 0;
-    });
+    }, 50);
   }
 
   function closeAll() {
@@ -73,22 +88,26 @@ export function initUI() {
 
     // Fade out overlay and slide sheets down
     overlay.classList.add('opacity-0');
-    allSheets.forEach(s => s.classList.add('translate-y-full'));
+    
+    allSheets.forEach(s => {
+      s.classList.remove('translate-y-0');
+      s.classList.add('translate-y-full');
+      s.style.transform = 'translateY(100%)';
+    });
 
     if (closeTimeout) clearTimeout(closeTimeout);
 
-    // Wait for the CSS transition (300ms) to finish before applying display: none
+    // Wait for the 300ms transition to finish before hiding elements
     closeTimeout = setTimeout(() => {
       overlay.classList.add('hidden');
       allSheets.forEach(s => s.classList.add('hidden'));
 
-      // Dispatch so modules can re-enable form toggles, etc.
+      // Dispatch event to re-enable underlying UI components
       document.dispatchEvent(new Event('sheetClosed'));
     }, 300);
   }
 
   // --- BIND ADD MENU BUTTONS ---
-
   document.getElementById('showTxnFormBtn')?.addEventListener('click', () => {
     document.dispatchEvent(new Event('resetTxnForm'));
     openSheet(txnForm);
@@ -134,7 +153,11 @@ export function initUI() {
   document.getElementById('fabBtn')?.addEventListener('click', () => openSheet(addMenu));
   document.querySelectorAll('.closeSheetBtn').forEach(btn => btn.addEventListener('click', closeAll));
   document.querySelectorAll('.backToMenuBtn').forEach(btn => btn.addEventListener('click', () => openSheet(addMenu)));
-  overlay?.addEventListener('click', closeAll);
+  
+  // Prevent ghost clicks from bubbling
+  overlay?.addEventListener('click', (e) => {
+    if (e.target === overlay) closeAll();
+  });
 
   return {
     closeAll,
