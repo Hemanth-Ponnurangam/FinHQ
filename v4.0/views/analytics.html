@@ -1,0 +1,55 @@
+        <div class="flex items-center justify-between pt-2">
+          <div class="flex items-center gap-4">
+            <button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+            <h2 class="font-display text-3xl font-semibold dark:text-white">Analytics</h2>
+          </div>
+          <select id="analyticsTimeFilter" class="p-2 rounded-xl bg-white dark:bg-gray-800 border border-forest-50 dark:border-gray-700 text-xs font-semibold outline-none dark:text-white">
+            <option value="thisMonth">This Month</option>
+            <option value="last3Months">Last 3 Months</option>
+            <option value="thisYear">This Year</option>
+            <option value="allTime">All Time</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card border border-forest-50/50 dark:border-gray-700">
+            <p class="text-[10px] text-forest-400 font-semibold tracking-widest uppercase mb-1">MoM Spend</p>
+            <p id="momSpendChange" class="font-semibold text-lg dark:text-white">—</p>
+            <p class="text-[9px] text-gray-400 mt-0.5">vs previous period month</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card border border-forest-50/50 dark:border-gray-700">
+            <p class="text-[10px] text-forest-400 font-semibold tracking-widest uppercase mb-1">Top Categories</p>
+            <p id="topCategoriesText" class="text-sm font-semibold text-forest-900 dark:text-white leading-tight">—</p>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700">
+          <p class="text-xs font-semibold text-forest-500 tracking-widest uppercase mb-1">Liquid Cash &amp; Savings Rate</p>
+          <p class="text-[10px] text-gray-400 mb-3">
+            <span class="inline-block w-2 h-0.5 bg-forest-500 rounded mr-1 align-middle"></span>Cumulative liquid cash (left axis) &nbsp;·&nbsp;
+            <span class="inline-block w-4 border-t-2 border-dashed border-amber-400 align-middle mr-1"></span>Monthly savings rate % (right axis)
+          </p>
+          <canvas id="nwHistoryChart" height="130"></canvas>
+          <p id="nwEmpty" class="hidden text-center text-forest-400 py-6 text-sm">No transaction history yet.</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-semibold text-forest-500 tracking-widest uppercase">Monthly Cashflow</p>
+            <p class="text-[9px] text-gray-400">Full history · green = net positive</p>
+          </div>
+          <canvas id="cashflowLineChart" height="120"></canvas>
+          <p id="cashflowEmpty" class="hidden text-center text-forest-400 py-6 text-sm">No data yet.</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700">
+          <p class="text-xs font-semibold text-red-500 tracking-widest uppercase mb-3">Expense Breakdown</p>
+          <canvas id="expensePieChart" height="180"></canvas>
+          <p id="expenseEmpty" class="hidden text-center text-forest-400 py-6 text-sm">No expenses in this period.</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700">
+          <p class="text-xs font-semibold text-green-600 tracking-widest uppercase mb-3">Income Sources</p>
+          <canvas id="incomePieChart" height="180"></canvas>
+          <p id="incomeEmpty" class="hidden text-center text-forest-400 py-6 text-sm">No income logged in this period.</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700">
+          <p class="text-xs font-semibold text-gold tracking-widest uppercase mb-3">Asset Allocation</p>
+          <canvas id="assetDonutChart" height="180"></canvas>
+          <p id="assetEmpty" class="hidden text-center text-forest-400 py-6 text-sm">No assets tracked yet.</p>
+        </div>
