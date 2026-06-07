@@ -1,0 +1,91 @@
+        <div class="flex items-center gap-4 pt-2">
+          <button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+          <h2 class="font-display text-3xl font-semibold dark:text-white">EMI Calculator</h2>
+        </div>
+
+        <!-- Sliders Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 space-y-6">
+          <!-- Loan Amount -->
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <label class="text-sm text-gray-500 dark:text-gray-400 font-medium">Loan amount</label>
+              <div class="bg-teal-50 dark:bg-teal-900/30 border border-teal-100 dark:border-teal-800 rounded-xl px-3 py-1.5 flex items-center gap-1">
+                <span class="text-teal-600 dark:text-teal-400 text-sm font-bold">₹</span>
+                <input type="number" id="emiLoanAmtVal" min="100000" max="50000000" step="50000" value="2000000" class="w-24 text-teal-600 dark:text-teal-400 font-bold bg-transparent outline-none text-right text-sm">
+              </div>
+            </div>
+            <input type="range" id="emiLoanAmt" min="100000" max="50000000" step="50000" value="2000000" class="emi-slider w-full h-2 rounded-full appearance-none cursor-pointer accent-teal-500">
+          </div>
+          <!-- Rate -->
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <label class="text-sm text-gray-500 dark:text-gray-400 font-medium">Rate of interest (p.a.)</label>
+              <div class="bg-teal-50 dark:bg-teal-900/30 border border-teal-100 dark:border-teal-800 rounded-xl px-3 py-1.5 flex items-center gap-1">
+                <input type="number" id="emiRateVal" min="1" max="25" step="0.1" value="8.5" class="w-12 text-teal-600 dark:text-teal-400 font-bold bg-transparent outline-none text-right text-sm">
+                <span class="text-teal-600 dark:text-teal-400 text-sm font-bold">%</span>
+              </div>
+            </div>
+            <input type="range" id="emiRate" min="1" max="25" step="0.1" value="8.5" class="emi-slider w-full h-2 rounded-full appearance-none cursor-pointer accent-teal-500">
+          </div>
+          <!-- Tenure -->
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <label class="text-sm text-gray-500 dark:text-gray-400 font-medium">Loan tenure</label>
+              <div class="bg-teal-50 dark:bg-teal-900/30 border border-teal-100 dark:border-teal-800 rounded-xl px-3 py-1.5 flex items-center gap-1">
+                <input type="number" id="emiTenureVal" min="1" max="30" step="1" value="20" class="w-10 text-teal-600 dark:text-teal-400 font-bold bg-transparent outline-none text-right text-sm">
+                <span class="text-teal-600 dark:text-teal-400 text-sm font-bold">Yr</span>
+              </div>
+            </div>
+            <input type="range" id="emiTenure" min="1" max="30" step="1" value="20" class="emi-slider w-full h-2 rounded-full appearance-none cursor-pointer accent-teal-500">
+          </div>
+        </div>
+
+        <!-- Stats + Donut row -->
+        <div class="flex gap-3">
+          <!-- Stats -->
+          <div class="flex-1 bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card border border-forest-50/50 dark:border-gray-700 space-y-3">
+            <div class="pb-2 border-b dark:border-gray-700">
+              <p class="text-[10px] text-teal-500 font-bold uppercase tracking-widest mb-0.5">Monthly EMI</p>
+              <p id="emiMonthly" class="font-display text-2xl font-semibold text-forest-900 dark:text-white">₹0</p>
+            </div>
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-gray-400">Principal</span>
+              <span id="emiPrincipalDisp" class="font-semibold text-gray-700 dark:text-gray-200">₹0</span>
+            </div>
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-gray-400">Total interest</span>
+              <span id="emiTotalInt" class="font-semibold text-blue-600 dark:text-blue-400">₹0</span>
+            </div>
+            <div class="flex justify-between items-center text-xs border-t dark:border-gray-700 pt-2">
+              <span class="text-gray-500 font-semibold">Total payable</span>
+              <span id="emiTotalAmt" class="font-bold text-forest-900 dark:text-white">₹0</span>
+            </div>
+          </div>
+          <!-- Donut -->
+          <div class="w-36 bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-card border border-forest-50/50 dark:border-gray-700 flex flex-col items-center justify-center gap-2">
+            <canvas id="emiDonut" width="120" height="120"></canvas>
+            <div class="flex flex-col gap-1 w-full px-1">
+              <div class="flex items-center gap-1 text-[9px] text-gray-500"><span class="w-2 h-2 rounded-sm flex-shrink-0" style="background:#E8EAF6"></span>Principal</div>
+              <div class="flex items-center gap-1 text-[9px] text-gray-500"><span class="w-2 h-2 rounded-sm flex-shrink-0" style="background:#5C6BC0"></span>Interest</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EMI Amortisation Chart -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700">
+          <p class="text-xs font-semibold text-forest-500 tracking-widest uppercase mb-1">EMI Chart</p>
+          <p class="text-[10px] text-gray-400 mb-3">Principal &amp; interest portion per EMI payment over loan tenure.</p>
+          <canvas id="emiLineChart" height="180"></canvas>
+        </div>
+
+        <!-- Interest % breakdown bar -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card border border-forest-50/50 dark:border-gray-700">
+          <div class="flex justify-between text-[10px] text-gray-400 mb-2">
+            <span id="emiPctPrincipal" class="font-semibold text-forest-600">0% Principal</span>
+            <span id="emiPctInterest" class="font-semibold text-blue-600">0% Interest</span>
+          </div>
+          <div class="flex h-3 rounded-full overflow-hidden">
+            <div id="emiBarPrincipal" class="h-full transition-all duration-300" style="background:#E8EAF6; width:50%"></div>
+            <div id="emiBarInterest"  class="h-full transition-all duration-300" style="background:#5C6BC0; width:50%"></div>
+          </div>
+        </div>
