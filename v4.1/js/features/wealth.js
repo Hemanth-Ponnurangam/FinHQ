@@ -3,6 +3,17 @@ import { store } from '../store.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UTILITIES
+
+// ── XSS helper ───────────────────────────────────────────────────────────────
+// FIX (security/critical): asset names, notes, and tags come from user input and
+// were injected directly into innerHTML. Escape all user-controlled strings.
+function escHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── XIRR — Newton-Raphson (~20 lines) ──────────────────────────────────────
@@ -56,8 +67,14 @@ function setCache(c) {
 }
 
 // ── Tax helpers ──────────────────────────────────────────────────────────────
+// FIX (wealth/high): Finance Act 2024 (effective FY2024–25) reduced the LTCG
+// holding period for equity-oriented Mutual Funds from 3 years to 1 year.
+// Debt MFs are now taxed at slab rate regardless of holding period — no LTCG.
+// FDs and PPF always attract slab-rate tax; they never qualify for LTCG.
 function ltcgThresholdDays(category) {
-  return (category === 'Mutual Fund' || category === 'Fixed Deposit' || category === 'PPF/EPF') ? 1095 : 365;
+  if (category === 'Mutual Fund') return 365;           // Equity MF: 1 yr since FY2024-25
+  if (category === 'Fixed Deposit' || category === 'PPF/EPF') return Infinity; // Slab-rate only
+  return 365; // Equity, Gold ETFs, Listed Bonds
 }
 function taxLabel(purchaseDateStr, category) {
   if (!purchaseDateStr) return { label:'—', cls:'bg-gray-100 text-gray-500', isLTCG: false };
@@ -571,7 +588,7 @@ export function initWealth(ui) {
         const sd    = r.sellDate ? new Date(r.sellDate).toLocaleDateString('en-IN',{month:'short',day:'numeric',year:'numeric'}) : '—';
         return `<div class="bg-white dark:bg-gray-800 rounded-2xl p-3 border border-forest-50/50 dark:border-gray-700">
           <div class="flex justify-between items-center">
-            <div><p class="font-semibold text-sm dark:text-white">${r.name||'—'}</p>
+            <div><p class="font-semibold text-sm dark:text-white">${escHtml(r.name||'—')}</p>
             <p class="text-[10px] text-gray-400">${r.qty||0} units · Sold ${sd} · <span class="${r.isLTCG?'text-green-500':'text-amber-500'}">${r.taxType||'—'}</span></p></div>
             <div class="text-right">
               <p class="font-bold text-sm ${isPos?'text-green-500':'text-red-500'}">${isPos?'+':''}₹${Math.abs(r.realisedPL||0).toLocaleString('en-IN',{maximumFractionDigits:0})}</p>
@@ -774,7 +791,7 @@ export function initWealth(ui) {
             <div class="flex justify-between items-start">
               <div class="min-w-0 flex-1 mr-3">
                 <p class="font-semibold text-forest-900 dark:text-white flex items-center gap-1 flex-wrap">
-                  <span class="truncate max-w-[140px]">${p.name}</span>
+                  <span class="truncate max-w-[140px]">${escHtml(p.name)}</span>
                   <span class="text-[8px]">${liveDot}</span>
                   <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${tax.cls}">${tax.label}</span>
                   ${tlBadge}
@@ -904,7 +921,11 @@ export function initKiteImport(ui) {
 
       for (const t of trades) {
         if (t.type === 'buy') {
-          if (!firstBuyDate || runQty <= 0) firstBuyDate = firstBuyDate || t.date;
+          // FIX (wealth/high): reset firstBuyDate when position was fully washed out
+          // (runQty hit 0 after a complete sell). Without the reset, a re-buy after
+          // selling all shares keeps the original date, inflating the holding period.
+          if (runQty <= 0) firstBuyDate = t.date;        // new position starts fresh
+          else if (!firstBuyDate) firstBuyDate = t.date; // very first buy ever
           runCost  += t.qty * t.price;
           runQty   += t.qty;
           avgPrice  = runQty > 0 ? runCost / runQty : 0;
@@ -967,7 +988,7 @@ export function initKiteImport(ui) {
             <input type="checkbox" class="kiteHoldingChk mt-0.5 accent-emerald-500 w-4 h-4 flex-shrink-0" data-idx="${i}" checked>
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between gap-2">
-                <span class="font-semibold text-sm dark:text-white">${h.symbol}</span>
+                <span class="font-semibold text-sm dark:text-white">${escHtml(h.symbol)}</span>
                 <span class="text-xs text-gray-500 dark:text-gray-400 tabular-nums">₹${inv}</span>
               </div>
               <div class="flex flex-wrap gap-x-2 mt-0.5 text-[10px]">
@@ -991,7 +1012,7 @@ export function initKiteImport(ui) {
             <input type="checkbox" class="kiteGainChk mt-0.5 accent-emerald-500 w-4 h-4 flex-shrink-0" data-idx="${i}" checked>
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between gap-2">
-                <span class="font-semibold text-sm dark:text-white">${g.symbol}</span>
+                <span class="font-semibold text-sm dark:text-white">${escHtml(g.symbol)}</span>
                 <span class="text-sm font-bold tabular-nums ${isPos ? 'text-green-500' : 'text-red-500'}">${isPos?'+':''}₹${Math.abs(g.realisedPL).toLocaleString('en-IN',{maximumFractionDigits:0})}</span>
               </div>
               <div class="flex flex-wrap gap-x-2 mt-0.5 text-[10px]">

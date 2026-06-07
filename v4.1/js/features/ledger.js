@@ -217,6 +217,11 @@ export function initLedger(ui) {
             : key === 'amount'
               ? (sortDir === -1 ? 'Amount ↓' : 'Amount ↑')
               : 'Category';
+        } else {
+          // FIX (ledger/high): inactive buttons were never reset — switching sort keys
+          // left stale directional arrows (↓/↑) on the previously active button.
+          b.textContent = b.dataset.sort === 'date' ? 'Date'
+            : b.dataset.sort === 'amount' ? 'Amount' : 'Category';
         }
       });
       renderList();
@@ -278,6 +283,10 @@ export function initLedger(ui) {
     document.getElementById('bulkToggleBtn').textContent = 'Select';
     document.getElementById('bulkActionBar')?.classList.add('hidden');
     document.getElementById('bulkRetagPanel')?.classList.add('hidden');
+    // FIX (ledger/medium): stale count display not cleared — re-opening bulk mode
+    // immediately showed "X selected" from the last session before any boxes were ticked.
+    const countEl = document.getElementById('bulkCount');
+    if (countEl) countEl.textContent = '0 selected';
   });
 
   // ── Form Reset ────────────────────────────────────────────────
@@ -489,13 +498,15 @@ export function initLedger(ui) {
       : 'Unknown';
 
     const linkedEvent  = txn.eventId ? (store.events || []).find(e => e.id === txn.eventId) : null;
+    // FIX (security/critical): escHtml wraps user-controlled event name to prevent XSS
     const eventCapsule = linkedEvent
-      ? `<span class="inline-flex items-center gap-0.5 bg-violet-500/10 dark:bg-violet-500/15 text-violet-400/80 dark:text-violet-400/70 text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wide ml-0.5">🎉 ${linkedEvent.name}</span>`
+      ? `<span class="inline-flex items-center gap-0.5 bg-violet-500/10 dark:bg-violet-500/15 text-violet-400/80 dark:text-violet-400/70 text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wide ml-0.5">🎉 ${escHtml(linkedEvent.name)}</span>`
       : '';
 
     const displayTags = (txn.tags || []).filter(t => !linkedEvent || t !== linkedEvent.name);
+    // FIX (security/critical): tags are user input — escape before innerHTML injection
     const tagBadges   = displayTags.map(tag =>
-      `<span class="bg-gray-200/50 dark:bg-gray-700/60 text-gray-400 dark:text-gray-500 text-[9px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wide">${tag}</span>`
+      `<span class="bg-gray-200/50 dark:bg-gray-700/60 text-gray-400 dark:text-gray-500 text-[9px] px-1.5 py-0.5 rounded font-medium uppercase tracking-wide">${escHtml(tag)}</span>`
     ).join('');
 
     const splitBadge  = txn.splitGroupId  ? `<span class="bg-teal-50 dark:bg-teal-900/30 text-teal-600 text-[9px] px-1.5 py-0.5 rounded ml-1">Split</span>` : '';
@@ -513,7 +524,7 @@ export function initLedger(ui) {
       <div data-id="${txn.id}" class="edit-card cursor-pointer bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card border border-forest-50/50 dark:border-gray-700 flex justify-between items-center active:scale-[0.98] ${isSelected ? 'ring-2 ring-forest-900 dark:ring-forest-400' : ''}">
         ${checkboxHtml}
         <div class="flex-1 min-w-0 mr-3">
-          <p class="font-semibold text-forest-900 dark:text-white flex items-center flex-wrap line-clamp-1">${txn.title || 'Untitled'}${splitBadge}${recurBadge}${receiptIcon}</p>
+          <p class="font-semibold text-forest-900 dark:text-white flex items-center flex-wrap line-clamp-1">${escHtml(txn.title || 'Untitled')}${splitBadge}${recurBadge}${receiptIcon}</p>
           <div class="flex items-center gap-1 mt-1 flex-wrap">
             <span class="text-xs text-forest-400">${dateString}</span>
             ${tagBadges}
@@ -638,19 +649,12 @@ export function initLedger(ui) {
       currentTags = currentTags.map(t => t.trim().toLowerCase()).filter(Boolean);
 
       // Duplicate detection — same title + date + amount (within ₹1)
-      if (!currentEditId && !isSplitMode) {
-        const dupes = store.transactions.filter(t =>
-          t.date && t.date.split('T')[0] === txnDateRaw &&
-          (t.title || '').toLowerCase().trim() === txnTitle.toLowerCase() &&
-          Math.abs((t.amount || 0) - rawAmount) < 1
-        );
-        if (dupes.length > 0) {
-          const proceed = confirm(`Possible duplicate: "${txnTitle}" ₹${rawAmount} on ${txnDateRaw} already exists.\n\nSave anyway?`);
-          if (!proceed) return;
-        }
-      }
-
-      const basePayload = {
+      // FIX (ledger/high): was confirm() — silently suppressed on Android Chrome PWA,
+      // making it impossible to deliberately save a legitimate duplicate transaction.
+      // Restructured: save logic moved into doSave() so it can be called both directly
+      // and as the ui.showConfirm() callback without duplicating code.
+      async function doSave() {
+        const basePayload = {
         title:       txnTitle,
         type:        document.getElementById('txnType').value || 'expense',
         date:        txnDateRaw + 'T00:00:00',
@@ -669,11 +673,18 @@ export function initLedger(ui) {
           const splitGroupId = `split_${Date.now()}`;
           let splitSum = 0;
           const rows   = Array.from(splitRows.querySelectorAll('.split-row'));
-          const splits = rows.map(r => {
+          // FIX (ledger/medium): previously only checked sum == total; individual
+          // zero/blank rows were silently written as "Untitled - Split X" with ₹0.
+          const splits = [];
+          for (const r of rows) {
             const amt = Number(r.querySelector('.split-amt').value);
+            if (amt <= 0) {
+              if (btn) btn.innerText = 'Save';
+              return showErr('All split rows must have an amount greater than ₹0.');
+            }
             splitSum += amt;
-            return { amount: amt, tag: r.querySelector('.split-cat').value.trim().toLowerCase() };
-          });
+            splits.push({ amount: amt, tag: r.querySelector('.split-cat').value.trim().toLowerCase() });
+          }
           if (Math.abs(splitSum - rawAmount) > 0.5) {
             if (btn) btn.innerText = 'Save';
             return showErr(`Split total (₹${splitSum.toFixed(2)}) must equal total amount (₹${rawAmount}).`);
@@ -736,6 +747,26 @@ export function initLedger(ui) {
         console.error(err);
       } finally {
         ui.closeAll();
+      }
+      } // end doSave()
+
+      // Run dupe check; if dupes found ask via custom confirm, else save immediately
+      const dupes = (!currentEditId && !isSplitMode)
+        ? store.transactions.filter(t =>
+            t.date && t.date.split('T')[0] === txnDateRaw &&
+            (t.title || '').toLowerCase().trim() === txnTitle.toLowerCase() &&
+            Math.abs((t.amount || 0) - rawAmount) < 1
+          )
+        : [];
+
+      if (dupes.length > 0) {
+        ui.showConfirm(
+          'Possible Duplicate',
+          `"${txnTitle}" ₹${rawAmount} on ${txnDateRaw} already exists. Save anyway?`,
+          doSave
+        );
+      } else {
+        await doSave();
       }
     });
 

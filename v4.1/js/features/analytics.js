@@ -123,6 +123,11 @@ export function initAnalytics() {
     const filter    = timeFilter?.value || 'allTime';
     const startDate = getStartDate();
 
+    // FIX (analytics/medium): pre-materialised recurring transactions have future dates.
+    // Including them inflates "This Month" / "This Year" charts before they occur.
+    // Guard: only count transactions with date <= today.
+    const todayMs = Date.now();
+
     const expTotals       = {};
     const incTotals       = {};
     const monthlyCashflow = {};
@@ -136,6 +141,8 @@ export function initAnalytics() {
 
     sortedTxns.forEach(txn => {
       const d   = parseTxnDate(txn.date);
+      // FIX: skip future-dated transactions so recurring phantom entries don't count
+      if (d.getTime() > todayMs) return;
       const key = monthKey(d);
       const amt = txn.amount || 0;
 
@@ -158,11 +165,19 @@ export function initAnalytics() {
     });
 
     // Asset allocation totals
+    // FIX (analytics/medium): the Wealth module maintains a localStorage price cache
+    // (key: finhq_prices_v2). Analytics was reading only asset.currentPrice from
+    // Firestore which can be days stale, causing Analytics to differ from Wealth view.
+    let priceCache = {};
+    try { priceCache = JSON.parse(localStorage.getItem('finhq_prices_v2') || '{}'); } catch { /* ignore */ }
+
     const assetTotals = {};
     state.assets.forEach(asset => {
       const qty   = asset.qty || 1;
-      const price = asset.currentPrice !== undefined
-        ? asset.currentPrice
+      // Prefer live-cached price, fall back to stored currentPrice, then currentValue
+      const cachedEntry = priceCache[asset.id] || priceCache[asset.symbol] || null;
+      const price = (cachedEntry?.price ?? asset.currentPrice) !== undefined
+        ? (cachedEntry?.price ?? asset.currentPrice)
         : (asset.currentValue || 0);
       const cat   = asset.category || 'Other';
       assetTotals[cat] = (assetTotals[cat] || 0) + qty * price;
@@ -203,7 +218,10 @@ export function initAnalytics() {
     const savingsRateData = sortedLiquidMonths.map(m => {
       const cf = monthlyCashflow[m] || { in: 0, out: 0 };
       if (!cf.in) return null;
-      return parseFloat((((cf.in - cf.out) / cf.in) * 100).toFixed(1));
+      // FIX (analytics/medium): clamp to ±200% so a large reimbursement in a low-expense
+      // month doesn't scale the right axis to 500% and hide the liquid cash trend.
+      const raw = ((cf.in - cf.out) / cf.in) * 100;
+      return parseFloat(Math.max(-200, Math.min(200, raw)).toFixed(1));
     });
 
     toggleEmpty('nwHistoryChart', 'nwEmpty', liquidData.length > 0);

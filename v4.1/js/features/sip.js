@@ -116,43 +116,48 @@ export function initSip(ui) {
     // ── Log Now ──────────────────────────────────────────────────
     if (e.target.closest('.log-now-btn')) {
       const btn = e.target.closest('.log-now-btn');
-
-      // FIX: Warn if already logged this month — prevents accidental double-logging
       const now = new Date();
-      if (sip.lastLogged) {
-        const lastDate = new Date(sip.lastLogged);
-        if (lastDate.getMonth() === now.getMonth() && lastDate.getFullYear() === now.getFullYear()) {
-          const proceed = confirm(
-            `"${sip.name}" was already logged on ${lastDate.toLocaleDateString('en-IN', { month: 'long', day: 'numeric' })} this month.\n\nLog again?`
-          );
-          if (!proceed) return;
+
+      // Inner function so the same logic runs whether or not we go through the confirm dialog
+      async function doLog() {
+        btn.innerText  = 'Logging…';
+        btn.disabled   = true;
+        try {
+          await addDoc(collection(db, 'transactions'), {
+            title:     sip.name,
+            amount:    sip.amount,
+            type:      'expense',   // Cash leaving liquid accounts
+            date:      now.toISOString(),
+            timestamp: now.getTime(),
+            tags:      [sip.type === 'Investment' ? 'Investments' : sip.type],
+            label:     'Auto-Logged'
+          });
+          // FIX: Persist last-logged timestamp so the warning can fire next time
+          await updateDoc(doc(db, 'recurring', sip.id), { lastLogged: now.toISOString() });
+          btn.innerText = '✓ Done';
+          btn.className = btn.className.replace('purple', 'green');
+        } catch (err) {
+          console.error('Log failed:', err);
+          btn.innerText = 'Log Now';
+          btn.disabled  = false;
         }
       }
 
-      btn.innerText  = 'Logging…';
-      btn.disabled   = true;
-
-      try {
-        await addDoc(collection(db, 'transactions'), {
-          title:     sip.name,
-          amount:    sip.amount,
-          type:      'expense',   // Cash leaving liquid accounts
-          date:      now.toISOString(),
-          timestamp: now.getTime(),
-          tags:      [sip.type === 'Investment' ? 'Investments' : sip.type],
-          label:     'Auto-Logged'
-        });
-
-        // FIX: Persist last-logged timestamp so the warning can fire next time
-        await updateDoc(doc(db, 'recurring', sip.id), { lastLogged: now.toISOString() });
-
-        btn.innerText = '✓ Done';
-        btn.className = btn.className.replace('purple', 'green');
-      } catch (err) {
-        console.error('Log failed:', err);
-        btn.innerText = 'Log Now';
-        btn.disabled  = false;
+      // FIX (sip/medium): was confirm() — silently suppressed on Android Chrome PWA mode,
+      // making it impossible to re-log. Use ui.showConfirm() with a callback instead.
+      if (sip.lastLogged) {
+        const lastDate = new Date(sip.lastLogged);
+        if (lastDate.getMonth() === now.getMonth() && lastDate.getFullYear() === now.getFullYear()) {
+          ui.showConfirm(
+            'Already Logged This Month',
+            `"${sip.name}" was already logged on ${lastDate.toLocaleDateString('en-IN', { month: 'long', day: 'numeric' })}. Log again?`,
+            doLog
+          );
+          return;
+        }
       }
+
+      await doLog();
       return;
     }
 

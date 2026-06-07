@@ -159,13 +159,22 @@ export function initExport() {
       .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)));
     if (txns.length === 0) return showToast('No transactions in the selected date range.', true);
 
-    let csv = 'Date,Title,Type,Amount (INR),Tags,Label\n';
+    // FIX (export/medium): was missing party, eventId, isRecurring, splitGroupId.
+    // A round-trip export → import lost all event linkages, recurring markers,
+    // and split grouping — critical for a finance app used as a source of truth.
+    let csv = 'Date,Title,Type,Amount (INR),Tags,Label,Party,EventId,IsRecurring,SplitGroupId\n';
     txns.forEach(t => {
-      const date  = t.date ? (t.date.includes('T') ? t.date.split('T')[0] : t.date) : '';
+      // FIX: Firestore Timestamp objects (from serverTimestamp()) cause .includes('T')
+      // to throw "not a function", crashing the entire dedup check silently.
+      // Normalise to a plain string before any string operations.
+      let rawDate = t.date;
+      if (rawDate && typeof rawDate.toDate === 'function') rawDate = rawDate.toDate().toISOString();
+      const date  = rawDate ? (typeof rawDate === 'string' && rawDate.includes('T') ? rawDate.split('T')[0] : rawDate) : '';
       const title = `"${(t.title  || '').replace(/"/g, '""')}"`;
       const tags  = `"${(t.tags   || []).join('; ')}"`;
       const label = `"${(t.label  || '').replace(/"/g, '""')}"`;
-      csv += `${date},${title},${t.type},${t.amount || 0},${tags},${label}\n`;
+      const party = `"${(t.party  || '').replace(/"/g, '""')}"`;
+      csv += `${date},${title},${t.type},${t.amount || 0},${tags},${label},${party},${t.eventId || ''},${t.isRecurring || false},${t.splitGroupId || ''}\n`;
     });
 
     downloadCSV(csv, `FinHQ_Transactions${buildDateSuffix()}.csv`);
@@ -198,12 +207,15 @@ export function initExport() {
     if (!store.isLoaded) return showToast('Data still loading. Please try again.', true);
     if (!store.debts.length) return showToast('No debts tracked yet.', true);
 
-    let csv = 'Loan Name,Principal (INR),Principal Repaid (INR),Outstanding (INR),Rate (% p.a.),Tenure (Months),EMI (INR),Start Date\n';
+    // FIX (export/low): moratorium period, bullet mode, and flexible rate schedules
+    // were not exported. A user relying on CSV as a backup lost all complex loan configs.
+    let csv = 'Loan Name,Principal (INR),Principal Repaid (INR),Outstanding (INR),Rate (% p.a.),Tenure (Months),EMI (INR),Start Date,Loan Mode,Rate Mode,Moratorium Months,Rate Schedule\n';
     store.debts.forEach(d => {
       const outstanding = (d.principal || 0) - (d.paid || 0);
       const name        = `"${(d.name || '').replace(/"/g, '""')}"`;
       const dateStr     = d.date ? d.date.split('T')[0] : '';
-      csv += `${name},${d.principal || 0},${d.paid || 0},${outstanding},${d.rate || 0},${d.tenure || 0},${(d.emi || 0).toFixed(2)},${dateStr}\n`;
+      const rateScheduleStr = `"${JSON.stringify(d.rateSchedule || []).replace(/"/g, '""')}"`;
+      csv += `${name},${d.principal || 0},${d.paid || 0},${outstanding},${d.rate || 0},${d.tenure || 0},${(d.emi || 0).toFixed(2)},${dateStr},${d.loanMode || 'standard'},${d.rateMode || 'fixed'},${d.moratoriumMonths || 0},${rateScheduleStr}\n`;
     });
 
     downloadCSV(csv, `FinHQ_Debts_${new Date().toISOString().split('T')[0]}.csv`);
@@ -537,8 +549,16 @@ export function initExport() {
     const tagsIdx   = headerCols.findIndex(c => c.startsWith('Tags'));
 
     // Build a dedup set of existing transactions: "title|date|amount"
+    // FIX (export/medium): t.date can be a Firestore Timestamp object (not a string)
+    // when written by serverTimestamp(). Calling .split() on an object throws
+    // "not a function" and crashes the entire import silently.
     const existing = new Set(
-      store.transactions.map(t => `${t.title}|${t.date?.split('T')[0]}|${t.amount}`)
+      store.transactions.map(t => {
+        let d = t.date;
+        if (d && typeof d.toDate === 'function') d = d.toDate().toISOString();
+        const dateStr = typeof d === 'string' ? d.split('T')[0] : '';
+        return `${t.title}|${dateStr}|${t.amount}`;
+      })
     );
 
     function parseCSVRow(line) {

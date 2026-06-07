@@ -148,7 +148,11 @@ export function initDebt(ui) {
   function _buildMoratoriumSchedule(debt, schedStart, monthMap) {
     const morMonths   = debt.moratoriumMonths || 0;
     const r = (debt.rate || 0) / 12 / 100;
-    let balance = debt.principal;
+    // FIX (debt/high): start from outstanding (principal - paid), not the full
+    // principal. Starting from full principal means the moratorium phase compounds
+    // interest on already-repaid amounts, making the schedule inconsistent with
+    // what the repayment phase starts with.
+    let balance = Math.max(0, debt.principal - (debt.paid || 0));
     let mc = 0;
 
     // Moratorium phase: interest-only piles on
@@ -166,7 +170,9 @@ export function initDebt(ui) {
 
     // After moratorium: repay grown principal
     const repayMonths = debt.tenure - morMonths;
-    const grownPrincipal = balance - (debt.paid || 0);
+    // balance now already reflects the outstanding amount (paid was subtracted at the top),
+    // so grownPrincipal is simply the compounded balance — no second deduction of paid.
+    const grownPrincipal = balance;
     if (grownPrincipal <= 0) return;
     const emi = calculateEMI(grownPrincipal, debt.rate || 0, Math.max(1, repayMonths));
     let repayBal = grownPrincipal;
@@ -519,6 +525,14 @@ export function initDebt(ui) {
       if (loanMode === 'standard' && (paid < 0 || paid > principal))
         return showErr('Amount repaid cannot exceed the original principal.');
 
+      // FIX (debt/high): moratorium >= tenure makes repayMonths = 0 → calculateEMI
+      // divides by 0 → returns Infinity/NaN which poisons the entire amortisation table.
+      const moratoriumMonths = loanMode === 'moratorium'
+        ? Number(document.getElementById('debtMoratoriumMonths')?.value) || 0 : 0;
+      if (loanMode === 'moratorium' && moratoriumMonths >= tenure) {
+        return showErr('Moratorium period must be shorter than the total tenure.');
+      }
+
       // Collect rate schedule for flexible mode
       let rateSchedule = [];
       if (rateMode === 'flexible') {
@@ -529,9 +543,6 @@ export function initDebt(ui) {
         });
         rateSchedule.sort((a, b) => a.fromMonth - b.fromMonth);
       }
-
-      const moratoriumMonths = loanMode === 'moratorium'
-        ? Number(document.getElementById('debtMoratoriumMonths')?.value) || 0 : 0;
 
       const payload = {
         principal, paid, rate, tenure,
@@ -1349,25 +1360,46 @@ export function initDebt(ui) {
         txnTitle = `${debt.name} — EMI`;
         txnTags.push('EMI');
       } else if (_payType === 'extra') {
-        // Split: first liveEMI covers interest+principal, rest is extra principal
-        const extraAboveEMI = Math.max(0, amt - liveEMI);
-        principalReduction  = Math.max(0, Math.round(liveEMI - interestPortion)) + Math.round(extraAboveEMI);
-        txnTitle = `${debt.name} — Payment (₹${Math.round(liveEMI).toLocaleString('en-IN')} EMI + ₹${Math.round(extraAboveEMI).toLocaleString('en-IN')} extra)`;
-        txnTags.push('Extra Payment');
+        // FIX (debt/medium): if user enters ≤ liveEMI in the "Extra" tab, treat it
+        // as a plain EMI so the ledger title doesn't show a misleading "₹0 extra".
+        if (amt <= liveEMI) {
+          principalReduction = Math.max(0, Math.round(amt - interestPortion));
+          txnTitle = `${debt.name} — EMI`;
+          txnTags.push('EMI');
+        } else {
+          // Split: first liveEMI covers interest+principal, rest is extra principal
+          const extraAboveEMI = Math.round(amt - liveEMI);
+          principalReduction  = Math.max(0, Math.round(liveEMI - interestPortion)) + extraAboveEMI;
+          txnTitle = `${debt.name} — Payment (₹${Math.round(liveEMI).toLocaleString('en-IN')} EMI + ₹${extraAboveEMI.toLocaleString('en-IN')} extra)`;
+          txnTags.push('Extra Payment');
+        }
 
         // Save custom EMI override if checked
         if (document.getElementById('debtSaveCustomEMI')?.checked) {
           await updateDoc(doc(db, 'debts', debt.id), { customEmi: amt });
         }
       } else { // part
+        // FIX (debt/high): clamp part payment to the outstanding balance so the
+        // ledger entry matches what actually applies to the loan. Without this,
+        // e.g. a ₹10L entry on a ₹50k-outstanding loan writes ₹10L to the ledger
+        // but only clears ₹50k from the debt — permanently corrupting net worth.
+        if (amt > outstanding) {
+          if (confirmBtn) { confirmBtn.textContent = 'Confirm Payment'; confirmBtn.disabled = false; }
+          const inp = document.getElementById('debtPayAmount');
+          if (inp) { inp.classList.add('border-red-400'); inp.placeholder = `Max ₹${outstanding.toLocaleString('en-IN')}`; setTimeout(() => inp.classList.remove('border-red-400'), 3000); }
+          return;
+        }
         principalReduction = Math.round(amt); // full amount goes to principal
         txnTitle = `${debt.name} — Part Payment`;
         txnTags.push('Part Payment');
       }
 
+      // Clamp ledger write to the actual clamped amount (never > outstanding for part)
+      const ledgerAmt = _payType === 'part' ? Math.min(Math.round(amt), outstanding) : Math.round(amt);
+
       // Log as expense transaction
       await addDoc(collection(db, 'transactions'), {
-        title: txnTitle, amount: Math.round(amt), type: 'expense',
+        title: txnTitle, amount: ledgerAmt, type: 'expense',
         date:  now.toISOString(), timestamp: now.getTime(),
         tags:  txnTags, label: _payType === 'part' ? 'Part Payment' : 'EMI Payment',
       });

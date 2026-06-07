@@ -2,12 +2,27 @@ import { db, collection, addDoc, doc, updateDoc, deleteDoc } from '../firebase.j
 import { store } from '../store.js';
 import { serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+// ── XSS helper ────────────────────────────────────────────────────────────
+// FIX (security/critical): event name, notes, organizer come from user input and
+// were interpolated directly into innerHTML. Escape all user-controlled strings.
+function escHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // ── Module-level UI reference (set during initEvents) ──────────────────────
 // Allows module-level helpers (openEventCreateSheet, openEventQuickAdd) to
 // use the central openSheet() / _ui?.closeAll() without prop-drilling through every call.
 let _ui = null;
 let _eventTags = [];
 let _eqaTags   = [];
+// FIX (events/high): was window._activeEventContext — a global singleton that creates
+// a race condition if two quick-add sheets are opened in quick succession. Using a
+// module-scoped variable means each import gets its own isolated context.
+let _activeEventContext = null;
 
 // ── Event Tag helpers ──────────────────────────────────────────────────────
 function renderEventTags() {
@@ -33,8 +48,8 @@ function renderEqaTags() {
   if (!c) return;
   c.innerHTML = _eqaTags.map(tag =>
     `<span class="inline-flex items-center gap-1 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 text-[10px] px-2 py-0.5 rounded-full font-semibold">
-      ${tag}
-      <button type="button" data-tag="${tag}" class="removeEqaTag text-violet-400 hover:text-red-500 font-bold leading-none">×</button>
+      ${escHtml(tag)}
+      <button type="button" data-tag="${escHtml(tag)}" class="removeEqaTag text-violet-400 hover:text-red-500 font-bold leading-none">×</button>
     </span>`
   ).join('');
   c.querySelectorAll('.removeEqaTag').forEach(btn => {
@@ -135,7 +150,7 @@ function renderActiveEventBanner(state) {
         <span class="text-2xl">${type.emoji}</span>
         <div>
           <p class="text-[10px] text-forest-400 font-semibold tracking-widest uppercase">Active Event</p>
-          <p class="font-display text-base font-semibold text-forest-900 dark:text-white leading-tight">${activeEvent.name}</p>
+          <p class="font-display text-base font-semibold text-forest-900 dark:text-white leading-tight">${escHtml(activeEvent.name)}</p>
         </div>
       </div>
       <div class="text-right">
@@ -169,8 +184,8 @@ function openEventQuickAdd(event) {
     tagLabel.parentElement?.classList.remove('hidden');
   }
 
-  // Store active event context
-  window._activeEventContext = event;
+  // Store active event context (module-scoped, not window — see declaration above)
+  _activeEventContext = event;
 
   const sheet   = document.getElementById('eventQuickAddSheet');
   const overlay = document.getElementById('bottomSheetOverlay');
@@ -274,7 +289,7 @@ function renderEventsList(state) {
             <span class="text-2xl flex-shrink-0">${type.emoji}</span>
             <div class="min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
-                <p class="font-semibold text-sm text-forest-900 dark:text-white">${event.name}</p>
+                <p class="font-semibold text-sm text-forest-900 dark:text-white">${escHtml(event.name)}</p>
                 ${statusBadge}
               </div>
               <p class="text-[10px] text-gray-400 mt-0.5">${formatDateRange(event.startDate, event.endDate)}</p>
@@ -307,7 +322,7 @@ function renderEventsList(state) {
           <div class="h-1.5 rounded-full transition-all ${barColor}" style="width:${pct}%"></div>
         </div>` : ''}
 
-        ${event.notes ? `<p class="text-[10px] text-gray-400 italic">${event.notes}</p>` : ''}
+        ${event.notes ? `<p class="text-[10px] text-gray-400 italic">${escHtml(event.notes)}</p>` : ''}
       </div>
     `;
   }
@@ -499,9 +514,24 @@ export function initEvents(ui) {
     const sheet = document.getElementById('eventCreateSheet');
     if (!sheet?._editId) return;
     const id = sheet._editId;
-    if (!confirm('Delete this event? Linked transactions will remain in the ledger.')) return;
-    deleteDoc(doc(db, 'events', id)).catch(err => console.error('Event delete error:', err));
-    closeAllSheets();
+    // FIX (events/medium): was confirm() — suppressed on Android Chrome PWA, and
+    // deleteDoc was not awaited so failures silently re-appeared after snapshot reconnect.
+    ui.showConfirm(
+      'Delete Event?',
+      'Linked transactions will remain in the Ledger.',
+      async () => {
+        try {
+          await deleteDoc(doc(db, 'events', id));
+          closeAllSheets();
+        } catch (err) {
+          console.error('Event delete error:', err);
+          const errEl = document.querySelector('#eventCreateSheet .ev-err')
+            || (() => { const p = document.createElement('p'); p.className = 'ev-err text-red-500 text-xs font-semibold mt-1 px-1'; document.getElementById('saveEventBtn')?.insertAdjacentElement('beforebegin', p); return p; })();
+          errEl.textContent = 'Delete failed — check connection.';
+          setTimeout(() => { errEl.textContent = ''; }, 4000);
+        }
+      }
+    );
   });
 
   // ── New Event Button ───────────────────────────────────────────
@@ -675,7 +705,7 @@ export function initEvents(ui) {
   const qaForm = document.getElementById('eventQuickAddForm');
   qaForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const event = window._activeEventContext;
+    const event = _activeEventContext;
     if (!event) return;
 
     const amount = parseFloat(document.getElementById('eqaAmount')?.value);

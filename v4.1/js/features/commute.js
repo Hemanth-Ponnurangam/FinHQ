@@ -304,50 +304,9 @@ export function initCommute(ui) {
         return;
       }
 
-      // BUG FIX: Enhanced odometer sequence validation.
-      // Previous code only compared against maxOdo, missing mid-sequence inserts
-      // and giving a misleading message for duplicates. Now we check three cases:
-      //  1. Duplicate odo reading (matches an existing entry exactly)
-      //  2. Before-the-start insert (would corrupt all deltas)
-      //  3. Mid-sequence insert (changes the delta for the entry above it)
-      // A new reading that is strictly greater than all existing readings is
-      // the normal case and passes without any prompt.
-      if (!currentEditId) {
-        const sortedLogs = [...store.fuel].sort((a, b) => a.odo - b.odo);
-        if (sortedLogs.length > 0) {
-          const minOdo = sortedLogs[0].odo;
-          const maxOdo = sortedLogs[sortedLogs.length - 1].odo;
-          const isDupe = sortedLogs.some(l => l.odo === odo);
-
-          if (isDupe) {
-            const proceed = confirm(
-              `⚠️ Duplicate Odometer\n\nA log already exists at ${odo.toLocaleString()} km.\n` +
-              `Duplicate readings produce a zero-distance delta (∞ efficiency).\n\nContinue anyway?`
-            );
-            if (!proceed) return;
-          } else if (odo < minOdo) {
-            const proceed = confirm(
-              `⚠️ Odometer Out of Range\n\nEntered: ${odo.toLocaleString()} km\n` +
-              `Earliest log: ${minOdo.toLocaleString()} km\n\n` +
-              `Inserting before all existing logs will corrupt every efficiency calculation.\n\nContinue anyway?`
-            );
-            if (!proceed) return;
-          } else if (odo > minOdo && odo < maxOdo) {
-            // Mid-sequence: locate the two surrounding entries
-            const before = [...sortedLogs].reverse().find(l => l.odo < odo);
-            const after  = sortedLogs.find(l => l.odo > odo);
-            const proceed = confirm(
-              `⚠️ Mid-Sequence Insert\n\nOdometer ${odo.toLocaleString()} km falls between existing logs:\n` +
-              `  Before: ${before.odo.toLocaleString()} km\n` +
-              `  After:  ${after.odo.toLocaleString()} km\n\n` +
-              `The log at ${after.odo.toLocaleString()} km will have its efficiency delta recalculated.\n\nContinue anyway?`
-            );
-            if (!proceed) return;
-          }
-          // odo > maxOdo → normal tail-append, no warning needed
-        }
-      }
-
+      // FIX (commute/medium): all three odometer warnings used confirm() which is
+      // silently suppressed in Android Chrome PWA mode, blocking valid corrections.
+      // Restructured: odometer checks call ui.showConfirm() with a doSave callback.
       const payload = {
         odo, liters, cost, fuelType, vehicle,
         plate:     document.getElementById('fuelPlate')?.value.trim().toUpperCase() || '',
@@ -356,27 +315,65 @@ export function initCommute(ui) {
         timestamp: new Date(dateStr).getTime(),
       };
 
-      try {
-        const saveBtn = document.getElementById('saveFuelBtn');
-        if (saveBtn) saveBtn.innerText = 'Saving…';
-
-        if (currentEditId) {
-          await updateDoc(doc(db, 'fuel', currentEditId), payload);
-        } else {
-          await addDoc(collection(db, 'fuel'), payload);
-          if (autoLog) {
-            await addDoc(collection(db, 'transactions'), {
-              title:     `${meta.label} — ${liters}${meta.unit} @ ${odo.toLocaleString()} km`,
-              amount:    cost,
-              type:      'expense',
-              date:      payload.date,
-              timestamp: payload.timestamp,
-              tags:      ['Transport'],
-              label:     'Auto-Logged',
-            });
+      async function doSaveFuel() {
+        try {
+          const saveBtn = document.getElementById('saveFuelBtn');
+          if (saveBtn) saveBtn.innerText = 'Saving…';
+          if (currentEditId) {
+            await updateDoc(doc(db, 'fuel', currentEditId), payload);
+          } else {
+            await addDoc(collection(db, 'fuel'), payload);
+            if (autoLog) {
+              await addDoc(collection(db, 'transactions'), {
+                title:     `${meta.label} — ${liters}${meta.unit} @ ${odo.toLocaleString()} km`,
+                amount:    cost,
+                type:      'expense',
+                date:      payload.date,
+                timestamp: payload.timestamp,
+                tags:      ['Transport'],
+                label:     'Auto-Logged',
+              });
+            }
           }
+        } catch (err) { console.error(err); } finally { ui.closeAll(); }
+      }
+
+      if (!currentEditId) {
+        const sortedLogs = [...store.fuel].sort((a, b) => a.odo - b.odo);
+        if (sortedLogs.length > 0) {
+          const minOdo = sortedLogs[0].odo;
+          const maxOdo = sortedLogs[sortedLogs.length - 1].odo;
+          const isDupe = sortedLogs.some(l => l.odo === odo);
+
+          if (isDupe) {
+            ui.showConfirm(
+              '⚠ Duplicate Odometer',
+              `A log already exists at ${odo.toLocaleString()} km. Duplicate readings produce a zero-distance delta (∞ efficiency). Continue anyway?`,
+              doSaveFuel
+            );
+            return;
+          } else if (odo < minOdo) {
+            ui.showConfirm(
+              '⚠ Odometer Out of Range',
+              `${odo.toLocaleString()} km is before your earliest log (${minOdo.toLocaleString()} km). Inserting here will corrupt all efficiency calculations. Continue anyway?`,
+              doSaveFuel
+            );
+            return;
+          } else if (odo > minOdo && odo < maxOdo) {
+            const before = [...sortedLogs].reverse().find(l => l.odo < odo);
+            const after  = sortedLogs.find(l => l.odo > odo);
+            ui.showConfirm(
+              '⚠ Mid-Sequence Insert',
+              `${odo.toLocaleString()} km falls between ${before.odo.toLocaleString()} km and ${after.odo.toLocaleString()} km. The efficiency delta for the later entry will be recalculated. Continue anyway?`,
+              doSaveFuel
+            );
+            return;
+          }
+          // odo > maxOdo → normal tail-append, no warning needed
         }
-      } catch (err) { console.error(err); } finally { ui.closeAll(); }
+      }
+
+      await doSaveFuel();
     });
 
     document.getElementById('deleteFuelBtn')?.addEventListener('click', () => {

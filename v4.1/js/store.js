@@ -16,7 +16,12 @@ export const store = {
   subscribe(callback, deps = null) {
     const entry = { callback, deps };
     this.subscribers.push(entry);
-    if (this.isLoaded) callback(this);
+    // FIX (arch): defer the immediate-fire to the next tick so that lazy-loaded
+    // view modules whose DOM is injected by loadViewHTML() and then init'd by
+    // initViewModule() always have their canvas/element refs available when the
+    // callback fires. Without this, a module that subscribes during init can
+    // receive the callback synchronously before its own DOM is ready.
+    if (this.isLoaded) setTimeout(() => callback(this), 0);
     return () => {
       const idx = this.subscribers.indexOf(entry);
       if (idx > -1) this.subscribers.splice(idx, 1);
