@@ -1,0 +1,77 @@
+<div class="space-y-5 pb-24">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between pt-2">
+    <div class="flex items-center gap-4">
+      <button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      </button>
+      <h2 class="font-display text-3xl font-semibold dark:text-white">Family</h2>
+    </div>
+    <!-- Invite / manage -->
+    <button id="familyInviteBtn"
+      class="flex items-center gap-1.5 px-3 py-2 bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 rounded-xl text-xs font-bold">
+      <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Invite
+    </button>
+  </div>
+
+  <!-- ── Family net worth card ────────────────────────────────────────────── -->
+  <div class="bg-forest-900 dark:bg-gray-800 text-white rounded-3xl p-5 shadow-xl">
+    <p class="text-[10px] tracking-widest uppercase text-forest-300 dark:text-gray-400 mb-1">Family Net Worth</p>
+    <p id="familyTotalNW" class="font-display text-4xl font-semibold text-gold tracking-tight">—</p>
+    <div class="flex gap-6 mt-3">
+      <div>
+        <p class="text-[9px] text-forest-300 dark:text-gray-500 uppercase tracking-wider">Assets</p>
+        <p id="familyTotalAssets" class="text-sm font-bold text-green-400">—</p>
+      </div>
+      <div>
+        <p class="text-[9px] text-forest-300 dark:text-gray-500 uppercase tracking-wider">Debts</p>
+        <p id="familyTotalDebts" class="text-sm font-bold text-red-400">—</p>
+      </div>
+      <div>
+        <p class="text-[9px] text-forest-300 dark:text-gray-500 uppercase tracking-wider">Liquid</p>
+        <p id="familyTotalLiquid" class="text-sm font-bold text-blue-300">—</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Member breakdown ─────────────────────────────────────────────────── -->
+  <div>
+    <p class="text-[10px] text-gray-400 uppercase tracking-widest font-semibold px-1 mb-2">Members</p>
+    <div id="familyMemberList" class="space-y-2">
+      <!-- Populated by family.js -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-card border border-forest-50/50 dark:border-gray-700
+                  flex items-center justify-center text-gray-300 dark:text-gray-600 text-sm h-20">
+        <i data-lucide="loader" class="w-4 h-4 animate-spin mr-2"></i> Loading…
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Family ID / Invite panel (hidden by default) ────────────────────── -->
+  <div id="familyInvitePanel" class="hidden bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 space-y-3">
+    <p class="text-sm font-bold dark:text-white">Join or share your Family</p>
+    <p class="text-xs text-gray-400 leading-relaxed">
+      Share your Family ID with another FinHQ user to combine your net worth in this view.
+      They enter it in their FinHQ app to link accounts — no sensitive data is shared.
+    </p>
+    <div>
+      <p class="text-[10px] text-forest-400 uppercase font-semibold mb-1">Your Family ID</p>
+      <div class="flex gap-2 items-center">
+        <code id="familyIdDisplay" class="flex-1 bg-forest-50 dark:bg-gray-700 rounded-xl px-3 py-2 text-xs font-mono dark:text-gray-300 truncate">—</code>
+        <button id="familyCopyIdBtn"
+          class="px-3 py-2 bg-forest-900 text-white text-xs font-bold rounded-xl flex-shrink-0">Copy</button>
+      </div>
+    </div>
+    <div>
+      <p class="text-[10px] text-forest-400 uppercase font-semibold mb-1">Join a family</p>
+      <div class="flex gap-2">
+        <input id="familyJoinInput" type="text" placeholder="Paste Family ID here"
+          class="flex-1 p-2.5 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none text-xs" />
+        <button id="familyJoinBtn"
+          class="px-3 py-2 bg-pink-500 text-white text-xs font-bold rounded-xl flex-shrink-0">Join</button>
+      </div>
+      <p id="familyJoinError" class="hidden text-[10px] text-red-500 font-semibold mt-1"></p>
+    </div>
+  </div>
+
+</div>

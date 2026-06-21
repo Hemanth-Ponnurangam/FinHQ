@@ -1,0 +1,115 @@
+        <div class="flex items-center gap-4 pt-2">
+          <button class="backToHubBtn p-2 bg-white dark:bg-gray-800 rounded-full shadow-card text-forest-900 dark:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+          <h2 class="font-display text-3xl font-semibold dark:text-white">Export</h2>
+        </div>
+
+        <!-- BUG FIX 2: date filter scope is now clearly labelled -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-semibold text-forest-500 tracking-widest uppercase">Date Range Filter</p>
+            <span class="text-[9px] bg-forest-50 dark:bg-forest-900/30 text-forest-600 dark:text-forest-400 px-2 py-0.5 rounded-full font-semibold">Transactions &amp; PDF only</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] text-gray-400 uppercase font-semibold">From</label>
+              <input type="date" id="exportDateFrom" class="w-full mt-1 p-2 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none text-sm">
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-400 uppercase font-semibold">To</label>
+              <input type="date" id="exportDateTo" class="w-full mt-1 p-2 rounded-xl bg-forest-50 dark:bg-gray-700 dark:text-white outline-none text-sm">
+            </div>
+          </div>
+          <p class="text-[10px] text-gray-400 mt-2">Leave blank to export all records. Assets &amp; Debts are always point-in-time snapshots.</p>
+        </div>
+
+        <!-- CSV Exports -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 space-y-3">
+          <p class="text-xs font-semibold text-forest-500 tracking-widest uppercase">CSV Exports</p>
+
+          <button id="exportCsvFullBtn" class="w-full flex items-center gap-3 p-4 bg-forest-50 dark:bg-gray-700 rounded-xl hover:bg-forest-100 dark:hover:bg-gray-600 transition-colors">
+            <div class="w-9 h-9 rounded-full bg-forest-900 flex items-center justify-center flex-shrink-0"><i data-lucide="file-spreadsheet" class="w-4 h-4 text-white"></i></div>
+            <div class="text-left">
+              <p class="font-semibold text-sm dark:text-white">Transactions CSV</p>
+              <p class="text-[10px] text-gray-400">All ledger entries · respects date filter</p>
+            </div>
+          </button>
+
+          <button id="exportAssetsBtn" class="w-full flex items-center gap-3 p-4 bg-orange-50 dark:bg-gray-700 rounded-xl hover:bg-orange-100 dark:hover:bg-gray-600 transition-colors">
+            <div class="w-9 h-9 rounded-full bg-gold flex items-center justify-center flex-shrink-0"><i data-lucide="trending-up" class="w-4 h-4 text-white"></i></div>
+            <div class="text-left">
+              <p class="font-semibold text-sm dark:text-white">Assets CSV</p>
+              <p class="text-[10px] text-gray-400">Portfolio snapshot with P&amp;L · date filter ignored</p>
+            </div>
+          </button>
+
+          <button id="exportDebtsBtn" class="w-full flex items-center gap-3 p-4 bg-red-50 dark:bg-gray-700 rounded-xl hover:bg-red-100 dark:hover:bg-gray-600 transition-colors">
+            <div class="w-9 h-9 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0"><i data-lucide="landmark" class="w-4 h-4 text-white"></i></div>
+            <div class="text-left">
+              <p class="font-semibold text-sm dark:text-white">Debts CSV</p>
+              <p class="text-[10px] text-gray-400">Loan details &amp; outstanding balance · date filter ignored</p>
+            </div>
+          </button>
+
+          <button id="exportBudgetsBtn" class="w-full flex items-center gap-3 p-4 bg-purple-50 dark:bg-gray-700 rounded-xl hover:bg-purple-100 dark:hover:bg-gray-600 transition-colors">
+            <div class="w-9 h-9 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0"><i data-lucide="repeat" class="w-4 h-4 text-white"></i></div>
+            <div class="text-left">
+              <p class="font-semibold text-sm dark:text-white">Recurring Payments CSV</p>
+              <p class="text-[10px] text-gray-400">All automated payments &amp; SIPs</p>
+            </div>
+          </button>
+        </div>
+
+        <!-- Full Backup -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 space-y-3">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-semibold text-forest-500 tracking-widest uppercase">Full Backup</p>
+            <span class="text-[9px] bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full font-semibold">All collections</span>
+          </div>
+          <p class="text-[10px] text-gray-400">One-click snapshot of all your data — transactions, assets, debts, events, fuel logs, recurring payments, and realised gains. Keep this safe offline.</p>
+          <button id="exportJsonBtn" class="w-full flex items-center gap-3 p-4 bg-green-50 dark:bg-gray-700 rounded-xl hover:bg-green-100 dark:hover:bg-gray-600 transition-colors">
+            <div class="w-9 h-9 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0"><i data-lucide="database" class="w-4 h-4 text-white"></i></div>
+            <div class="text-left">
+              <p class="font-semibold text-sm dark:text-white">Full Backup (JSON)</p>
+              <p class="text-[10px] text-gray-400">FinHQ_Backup_YYYY-MM-DD.json · platform-independent</p>
+            </div>
+          </button>
+
+        <!-- PDF Reports -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700 space-y-3">
+          <p class="text-xs font-semibold text-forest-500 tracking-widest uppercase">PDF Reports</p>
+
+          <button id="exportPdfBtn" class="w-full flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+            <div class="w-9 h-9 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0"><i data-lucide="file-text" class="w-4 h-4 text-white"></i></div>
+            <div class="text-left">
+              <p class="font-semibold text-sm dark:text-white">Monthly PDF Summary</p>
+              <p class="text-[10px] text-gray-400">Income, expenses &amp; net cashflow · respects date filter</p>
+            </div>
+          </button>
+
+          <!-- GAP C: Full Net Worth Statement PDF -->
+          <button id="exportNwPdfBtn" class="w-full flex items-center gap-3 p-4 bg-forest-50 dark:bg-gray-700 rounded-xl hover:bg-forest-100 dark:hover:bg-gray-600 transition-colors">
+            <div class="w-9 h-9 rounded-full bg-forest-700 flex items-center justify-center flex-shrink-0"><i data-lucide="bar-chart-2" class="w-4 h-4 text-white"></i></div>
+            <div class="text-left">
+              <p class="font-semibold text-sm dark:text-white">Net Worth Statement PDF</p>
+              <p class="text-[10px] text-gray-400">Assets + Debts + Cashflow on one statement</p>
+            </div>
+          </button>
+        </div>
+
+        <!-- GAP A: CSV Import -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-card border border-forest-50/50 dark:border-gray-700">
+          <div class="flex items-center justify-between mb-1">
+            <p class="text-xs font-semibold text-forest-500 tracking-widest uppercase">Import</p>
+            <span class="text-[9px] bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full font-semibold">Transactions only</span>
+          </div>
+          <p class="text-[10px] text-gray-400 mb-3">Restore from a previously exported FinHQ Transactions CSV. Duplicates are skipped automatically.</p>
+          <button id="importCsvBtn" class="w-full flex items-center gap-3 p-4 bg-amber-50 dark:bg-gray-700 rounded-xl hover:bg-amber-100 dark:hover:bg-gray-600 transition-colors">
+            <div class="w-9 h-9 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0"><i data-lucide="upload" class="w-4 h-4 text-white"></i></div>
+            <div class="text-left">
+              <p class="font-semibold text-sm dark:text-white">Import Transactions CSV</p>
+              <p class="text-[10px] text-gray-400">Select a FinHQ_Transactions_*.csv file</p>
+            </div>
+          </button>
+          <input type="file" id="importCsvFile" accept=".csv" class="hidden">
+          <p id="importStatus" class="hidden mt-3 text-sm font-semibold rounded-xl px-4 py-2"></p>
+        </div>
